@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<head>
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+    <link rel="stylesheet" href="styles/style.css">
+</head>
+<body>
+    <script src="https://cdn.botframework.com/botframework-webchat/latest/webchat.js"></script>
+    <div id="chat-button-div">
+        <button id="chat-button" onclick="showChatContainer()" class="circle-button">Click Me</button>
+    </div>
+    <div id="chat-container" class="chat-container" style="order: 3; display: none; position: relative;">
+        <div>
+            <div role="main"></div>
+        </div>
+        <script>
+            document.querySelectorAll('[role="main"]')[0].setAttribute("id", "webchat");
+
+            let showChatContainer = async () => {
+                let circleButton = document.getElementById('chat-button');
+                circleButton.style.display = 'none';
+                let chatContainer = document.getElementById('chat-container');
+                chatContainer.style.display = 'block';
+
+                // "styleSet" is a set of CSS rules which are generated from "styleOptions"
+                const styleSet = window.WebChat.createStyleSet({
+                    bubbleBackground: 'rgb(242, 140, 40)',
+                    hideUploadButton: true,
+                    bubbleFromUserBackground: 'rgba(0, 255, 0, .1)',
+
+                    botAvatarImage: 'https://docs.microsoft.com/en-us/azure/bot-service/v4sdk/media/logo_bot.svg?view=azure-bot-service-4.0',
+                    botAvatarInitials: 'BF',
+                   
+                    rootHeight: '100%',
+                    rootWidth: '30%'
+                });
+
+                // After generated, you can modify the CSS rules
+                styleSet.textContent = {
+                    ...styleSet.textContent,
+                    fontFamily: "'Comic Sans MS', 'Arial', sans-serif",
+                    fontWeight: 'bold'
+                };
+
+
+                var user = {
+                    id: 'userid',
+                    name: 'userid'
+                };
+
+                const token = "qOonFjBjTss.XQPMWAWK0e0EyXLXOE38iM0ODLsBDI8C9l4SL_jyoyA";
+
+                window.WebChat.renderWebChat(
+                    {
+                        directLine: window.WebChat.createDirectLine({ token, user }),
+                        userID: 'WebChat_UserId',
+                        locale: 'en-US',
+                        username: 'Web Chat User',
+                        locale: 'en-US',
+                        // Passing 'styleSet' when rendering Web Chat
+                        styleSet,
+                        styleOptions: {
+                            hideUploadButton: true,
+                            botAvatarInitials: 'BF',
+                            botAvatarImage: 'https://image.similarpng.com/very-thumbnail/2021/06/Chef-icon-illustration-on-transparent-background-PNG.png',
+                            userAvatarInitials: 'WC',
+                            userAvatarImage: '<your user avatar URL>',
+                        }
+                    },
+                    document.getElementById('webchat')
+                );
+            }
+        </script>
+    </div>
+</body>
+
+

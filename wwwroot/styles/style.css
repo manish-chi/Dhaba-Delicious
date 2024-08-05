@@ -1,0 +1,76 @@
+﻿body {
+    background-image: url('../images/dd-background.jpg');
+    background-size: cover; /* This makes the background image cover the entire area */
+    background-repeat: no-repeat; /* This prevents the image from repeating */
+    background-attachment: fixed; /* This makes the background image stay in place when scrolling */
+    background-position: center; /* This positions the image in the center */
+}
+
+.circle-button {
+    width: 100px;
+    height: 100px;
+    float:right;
+    background-color: #4CAF50; /* Green background */
+    border: none;
+    border-radius: 50%; /* Makes the button circular */
+    color: white; /* White text color */
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+   
+    margin: 4px 2px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+    .circle-button:hover {
+        background-color: #45a049; /* Darker green on hover */
+    }
+
+#chat-button-div {
+    margin-bottom: 750px;
+    margin-right:70px;
+}
+
+
+#chat-container{
+    float:right;
+    width:600px;
+}
+
+
+
+#webchat__send-box-text-box__input{
+    width:inherit;
+}
+
+.main {
+    margin: 18px;
+    border-radius: 4px;
+}
+
+div[role="form"] {
+    background-color: black;
+}
+
+div[role="log"] {
+    background: gainsboro;
+}
+
+div[role="status"] {
+    background: darkgray;
+}
+
+#webchat {
+    position: fixed;
+    height: calc(100% - 135px);
+    z-index: 9999;
+    width: 1600px;
+    top: 132px;
+    overflow: hidden;
+}
+
+#webchat__basic-transcript__filler{
+   width:inherit;
+}
