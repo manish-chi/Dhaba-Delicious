@@ -4,6 +4,7 @@ using Daba_Delicious.Cards;
 using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
 using Daba_Delicious.Utilities;
+using Dhaba_Delicious.Serializables;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
@@ -37,17 +38,19 @@ namespace Daba_Delicious.Dialogs
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
         
+
+
         const string PromptForDay = "\"When would you like to visit us? 📌\\r\\n\\r\\nPlease share the day with us below so that we can reserve your table.\";";
         const string PromptForTime = "Sure, and by what time you will be there? ⏰";
-        public ReserveTableDialog(IConfiguration configuration,IStatePropertyAccessor<User> userAccessor,IStatePropertyAccessor<Reservation> reservationAccessor, DDRecognizer dDRecognizer) : base(nameof(ReserveTableDialog))
+        public ReserveTableDialog(IConfiguration configuration,UserState userState,IStatePropertyAccessor<User> userAccessor,IStatePropertyAccessor<Reservation> reservationAccessor,IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor, DDRecognizer dDRecognizer) : base(nameof(ReserveTableDialog))
         {
 
             this._userAccessor = userAccessor;
             this._configuration = configuration;
             this._dDRecognizer = dDRecognizer;
-            this._restaurantManager = new RestaurantManager(new RestaurantClient(configuration),new CardManager());
+            this._restaurantManager = new RestaurantManager(new RestaurantClient(configuration),restaurantDataAccessor,new CardManager());
             this._reservationManager = new ReservationManager(new ReservationClient(configuration));
-
+            
             this._userAccessor = userAccessor;
             this._reservationAccessor = reservationAccessor;
 
@@ -133,10 +136,13 @@ namespace Daba_Delicious.Dialogs
 
         private async Task<DialogTurnResult> ShowDateTimeAdaptiveCardAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            var card = new CardManager();
-            var attach = card.GetReserveTableAdaptiveCard();
+            var reservation = await _reservationAccessor.GetAsync(stepContext.Context, () => new Reservation(), cancellationToken);
 
-            await stepContext.Context.SendActivityAsync(MessageFactory.Attachment(attach), cancellationToken);
+            var card = new CardManager();
+
+            var reply = await _restaurantManager.GetDateTimeCard(stepContext.Context,reservation,cancellationToken);
+
+            await stepContext.Context.SendActivityAsync(reply,cancellationToken);
 
             return EndOfTurn;
         }
@@ -145,7 +151,12 @@ namespace Daba_Delicious.Dialogs
         {
             var reservation = await _reservationAccessor.GetAsync(stepContext.Context, () => new Reservation(), cancellationToken);
 
-            reservation.RestaurantId = stepContext.Context.Activity.Text;
+            dynamic submitData = stepContext.Context.Activity.Value;
+
+            reservation.Restaurant = new RestaurantData()
+            {
+                _id = submitData.action
+            };
 
             await _reservationAccessor.SetAsync(stepContext.Context, reservation, cancellationToken);
 
@@ -164,7 +175,8 @@ namespace Daba_Delicious.Dialogs
         private async Task<DialogTurnResult> GetNearBuyRestaurantAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(), cancellationToken);
-            var reply = await _restaurantManager.GetNearestRestaurantsAsync(user);
+
+            var reply = await _restaurantManager.GetNearestRestaurantsAsync(stepContext.Context,user,cancellationToken);
 
             await _reservationAccessor.SetAsync(stepContext.Context, new Reservation()
             {

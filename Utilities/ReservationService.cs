@@ -21,7 +21,7 @@ namespace Daba_Delicious.Utilities
         {
             HttpClient client = new HttpClient();
 
-            dynamic obj = new { user = reservation.UserId, restaurant = reservation.RestaurantId, datetime = reservation.Time };
+            dynamic obj = new { user = reservation.UserId, restaurant = reservation.Restaurant._id, datetime = reservation.Time };
 
             string json = JsonConvert.SerializeObject(obj);
             var content = new StringContent(json, Encoding.UTF8, "application/json");

@@ -3,6 +3,7 @@
 using Daba_Delicious.Dialogs;
 using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
+using Dhaba_Delicious.Serializables;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
@@ -25,6 +26,7 @@ namespace Daba_Delicious.Bots
         private DDRecognizer _dDRecognizer;
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
+        private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
 
         private DialogSet _dialogs { get; set; }
 
@@ -38,6 +40,7 @@ namespace Daba_Delicious.Bots
 
             _userAccessor = userState.CreateProperty<User>("User");
             _reservationAccessor = userState.CreateProperty<Reservation>("Reservation");
+            this._restaurantDataAccessor = userState.CreateProperty<List<RestaurantData>>("RestaurantData");
 
             var dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
 
@@ -45,7 +48,7 @@ namespace Daba_Delicious.Bots
             _dialogs.Add(new DDLuisDialog(configuration,userState,ddrecognizer));
             _dialogs.Add(new ContactDialog(configuration, userState));
             _dialogs.Add(new DrinksDialog(configuration, userState));
-            _dialogs.Add(new ReserveTableDialog(configuration,_userAccessor,_reservationAccessor,_dDRecognizer));
+            _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_restaurantDataAccessor,_dDRecognizer));
             _dialogs.Add(new MenuDialog(configuration, userState));
 
         }

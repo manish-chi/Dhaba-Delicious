@@ -14,12 +14,13 @@ namespace Daba_Delicious.Utilities
 {
     public class RestaurantClient : IRestaurantService
     {
-        IConfiguration _configuration;
+        public IConfiguration Configuration { get; set; }
+
         public RestaurantClient(IConfiguration configuration)
         {
-            this._configuration = configuration;
+            this.Configuration = configuration;
         }
-       
+
         public async Task<RestaurantSerializer> GetNearbyRestaurantsAsync(User user)
         {
             HttpClient client = new HttpClient();
@@ -28,7 +29,7 @@ namespace Daba_Delicious.Utilities
 
             try
             {
-                HttpResponseMessage response = await client.GetAsync(_configuration["GetNearbyRestaurantsUri"]);
+                HttpResponseMessage response = await client.GetAsync(Configuration["GetNearbyRestaurantsUri"]);
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
@@ -44,7 +45,7 @@ namespace Daba_Delicious.Utilities
         }
 
 
-        public async Task<NodeTemplateSeralizer> GetNearbyRestaurantsCardAsync(User user)
+        public async Task<NodeTemplateSeralizer> GetCardAsync(String uri)
         {
             HttpClient client = new HttpClient();
 
@@ -52,7 +53,7 @@ namespace Daba_Delicious.Utilities
 
             try
             {
-                HttpResponseMessage response = await client.GetAsync(_configuration["GetNearRestaurantAdaptiveCardUri"]);
+                HttpResponseMessage response = await client.GetAsync(uri);
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");

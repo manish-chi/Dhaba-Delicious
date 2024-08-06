@@ -2,6 +2,7 @@
 
 using Daba_Delicious.Bots;
 using Daba_Delicious.Recognizer;
+using Dhaba_Delicious.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Bot.Builder;
@@ -16,9 +17,15 @@ namespace Daba_Delicious
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration,IWebHostEnvironment env)
         {
-            Configuration = configuration;
+            var builder = new ConfigurationBuilder()
+                          .SetBasePath(env.ContentRootPath)
+                          .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: false)
+                          .AddEnvironmentVariables();
+
+
+            Configuration = builder.Build();
         }
 
         public IConfiguration Configuration { get; }
@@ -30,6 +37,8 @@ namespace Daba_Delicious
             {
                 options.SerializerSettings.MaxDepth = HttpHelper.BotMessageSerializerSettings.MaxDepth;
             });
+
+            services.Configure<AppSettings>(Configuration.GetSection("ApplicationSettings"));
 
             // Create the Bot Framework Authentication to be used with the Bot Adapter.
             services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();

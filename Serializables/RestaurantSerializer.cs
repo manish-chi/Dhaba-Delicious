@@ -32,5 +32,4 @@ namespace Dhaba_Delicious.Serializables
         public string address { get; set; }
         public string description { get; set; }
     }
-
 }

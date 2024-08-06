@@ -5,7 +5,10 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs.Declarative.Parsers;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Daba_Delicious.Models
@@ -14,19 +17,45 @@ namespace Daba_Delicious.Models
     {
         private IRestaurantService _restaurantService;
         private CardManager _cardManager;
-        public RestaurantManager(IRestaurantService restaurantService,CardManager cardManager)
+        private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
+        public RestaurantManager(IRestaurantService restaurantService, IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,CardManager cardManager)
         {
             this._restaurantService = restaurantService;
             this._cardManager = cardManager;
+            this._restaurantDataAccessor = restaurantDataAccessor;
         }
 
-        public async Task<IMessageActivity> GetNearestRestaurantsAsync(User user)
+        public async Task<IMessageActivity> GetDateTimeCard(ITurnContext context,Reservation reservation,CancellationToken cancellationToken)
+        {
+            var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetDateTimeAdaptiveCardUri"]);
+
+            var restaurants = await _restaurantDataAccessor.GetAsync(context, () => new List<RestaurantData>(), cancellationToken);
+
+            var restaurant = restaurants.First(x => x._id == reservation.Restaurant._id);
+
+            try
+            {
+                var  dateTimeCard = JsonConvert.DeserializeObject<DateTimeSerializer>(result.data.ToString());
+
+                return MessageFactory.Attachment(_cardManager.GetDateTimeCard(restaurant,dateTimeCard));
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<IMessageActivity> GetNearestRestaurantsAsync(ITurnContext context, User user, CancellationToken cancellationToken)
         {
             var restaurants = await _restaurantService.GetNearbyRestaurantsAsync(user);
 
-            var cardArray = new List<Attachment>();
+            var listofRestaurants = restaurants.data.ToList();
 
-            var result = await _restaurantService.GetNearbyRestaurantsCardAsync(user);
+            if (restaurants.data != null) await _restaurantDataAccessor.SetAsync(context, listofRestaurants, cancellationToken);
+
+            var cardArray = new List<Attachment>();
+            
+            var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetNearRestaurantAdaptiveCardUri"]);
            
 
             foreach (var restaurant in restaurants.data)
