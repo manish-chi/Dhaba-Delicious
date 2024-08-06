@@ -1,5 +1,6 @@
 ﻿using AdaptiveCards;
 using AdaptiveCards.Rendering;
+using Daba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Bot.Builder;
@@ -13,55 +14,24 @@ namespace Daba_Delicious.Cards
 {
     public class CardManager
     {
-        public const string json = "{\r\n  \"$schema\": \"http://adaptivecards.io/schemas/adaptive-card.json\",\r\n  \"type\": \"AdaptiveCard\",\r\n  \"version\": \"1.0\",\r\n  \"body\": [\r\n    {\r\n      \"type\": \"TextBlock\",\r\n      \"text\": \"Date Input\"\r\n    },\r\n    {\r\n      \"type\": \"Input.Date\",\r\n      \"id\": \"date\",\r\n      \"placeholder\": \"Enter a date\",\r\n      \"value\": \"2017-10-12\"\r\n    }\r\n  ],\r\n  \"actions\": [\r\n    {\r\n      \"type\": \"Action.Submit\",\r\n      \"title\": \"OK\"\r\n    }\r\n  ]\r\n}";
-        public Attachment GetReserveTableAdaptiveCard()
+        public IMessageActivity GetMenuSuggestionReply(User user)
         {
-            var adaptiveElements = new List<AdaptiveElement>();
+            var reply = MessageFactory.Text($"Hi, {user.Name}!😊.Welcome to Dhaba Delicious!Be ready to enjoy a unique dining experience that will keep you smiling even when you get home. 😊");
 
-
-            var inputDate = new AdaptiveDateInput()
+            reply.SuggestedActions = new SuggestedActions()
             {
-                Id = "date",
-                Placeholder = "Enter Date",
-                Value = DateTime.Now.Date.ToShortDateString()
+                Actions = new List<CardAction>()
+        {
+            new CardAction() { Title = "Reserve Table",Image = "https://dhabadeliciousstorage.blob.core.windows.net/icons/bell_3530694.png",Type = ActionTypes.ImBack, Value = "Reserve Table" },
+            new CardAction() { Title = "Menu",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/food_icon.png", Type = ActionTypes.ImBack, Value = "Menu"},
+            new CardAction() { Title = "Discover Drinks",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/beer_931949.png", Type = ActionTypes.ImBack, Value = "Beer"},
+            new CardAction() { Title = "Locate Us",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/locate_us.png", Type = ActionTypes.ImBack, Value = "Locate"},
+            new CardAction() { Title = "Contact",Image="https://dhabadeliciousstorage.blob.core.windows.net/icons/contact_2967892.png", Type = ActionTypes.ImBack, Value = "Contact" },
+        },
             };
 
-            var inputTime = new AdaptiveTimeInput()
-            {
-                Id = "time",
-                Value = DateTime.Now.Date.ToShortTimeString(),
-            };
+            return reply;
 
-            adaptiveElements.Add(inputDate);
-            adaptiveElements.Add(inputTime);
-
-            var submitActions = new List<AdaptiveAction>();
-
-            var submitAction = new AdaptiveSubmitAction()
-            {
-                Title = "Reserve Table",
-                Type = "Action.Submit",
-                Style = "5"
-            };
-
-
-            submitActions.Add(submitAction);
-
-
-            var card = new AdaptiveCard("1.3");
-            card.Body = adaptiveElements;
-            card.Actions = submitActions;
-            card.Type = AdaptiveCard.TypeName;
-
-
-            var adaptiveCardAttachment = new Attachment()
-            {
-                ContentType = "application/vnd.microsoft.card.adaptive",
-                Content = card,
-            };
-
-
-            return adaptiveCardAttachment;
         }
 
         //public Attachment GetNearestRestCard(RestaurantData restaurant, NearestRestaurantAdaptiveSerializer nearAdapativeObj)

@@ -1,5 +1,6 @@
 ﻿// Generated with Bot Builder V4 SDK Template for Visual Studio EchoBot v4.22.0
 
+using Daba_Delicious.Cards;
 using Daba_Delicious.Dialogs;
 using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
@@ -131,21 +132,7 @@ namespace Daba_Delicious.Bots
 
         public async Task SendWelcomeMessageAsync(ITurnContext context, User user, CancellationToken cancellationToken)
         {
-           
-
-            var reply = MessageFactory.Text($"Hi, {user.Name}!😊.Welcome to Dhaba Delicious!Be ready to enjoy a unique dining experience that will keep you smiling even when you get home. 😊");
-
-            reply.SuggestedActions = new SuggestedActions()
-            {
-                Actions = new List<CardAction>()
-        {
-            new CardAction() { Title = "Reserve Table",Image = "https://dhabadeliciousstorage.blob.core.windows.net/icons/bell_3530694.png",Type = ActionTypes.ImBack, Value = "Reserve Table" },
-            new CardAction() { Title = "Menu",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/food_icon.png", Type = ActionTypes.ImBack, Value = "Menu"},
-            new CardAction() { Title = "Discover Drinks",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/beer_931949.png", Type = ActionTypes.ImBack, Value = "Beer"},
-            new CardAction() { Title = "Locate Us",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/locate_us.png", Type = ActionTypes.ImBack, Value = "Locate"},
-            new CardAction() { Title = "Contact",Image="https://dhabadeliciousstorage.blob.core.windows.net/icons/contact_2967892.png", Type = ActionTypes.ImBack, Value = "Contact" },
-        },
-            };
+            var reply = new CardManager().GetMenuSuggestionReply(user);
             // await context.SendActivityAsync(reply, cancellationToken);
 
             await context.SendActivityAsync(reply, cancellationToken);
