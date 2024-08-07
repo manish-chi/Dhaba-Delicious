@@ -1,6 +1,7 @@
 ﻿namespace Dhaba_Delicious.Serializables
 {
 
+
     public class DateTimeSerializer
     {
         public string type { get; set; }
@@ -20,6 +21,7 @@
         public string type { get; set; }
         public string width { get; set; }
         public Item_1[] items { get; set; }
+        public string minHeight { get; set; }
     }
 
     public class Item_1
@@ -28,25 +30,26 @@
         public string url { get; set; }
         public string width { get; set; }
         public string height { get; set; }
+        public string id { get; set; }
         public string spacing { get; set; }
         public bool isRequired { get; set; }
-
-        public string id { get; set; }
         public string errorMessage { get; set; }
-
-        public string min {get; set;}
-        public string max { get; set; }
         public string label { get; set; }
         public string value { get; set; }
+        public string min { get; set; }
+        public string max { get; set; }
         public Selectaction_1 selectAction { get; set; }
+        public string text { get; set; }
+        public bool wrap { get; set; }
+        public string fontType { get; set; }
+        public string style { get; set; }
+        public string size { get; set; }
+        public string weight { get; set; }
     }
 
     public class Selectaction_1
     {
         public string type { get; set; }
-        public string title { get; set; }
-        public string id { get; set; }
-        public object data { get; set; }
     }
 
 }

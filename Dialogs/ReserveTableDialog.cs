@@ -38,10 +38,6 @@ namespace Daba_Delicious.Dialogs
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
         
-
-
-        const string PromptForDay = "\"When would you like to visit us? 📌\\r\\n\\r\\nPlease share the day with us below so that we can reserve your table.\";";
-        const string PromptForTime = "Sure, and by what time you will be there? ⏰";
         public ReserveTableDialog(IConfiguration configuration,UserState userState,IStatePropertyAccessor<User> userAccessor,IStatePropertyAccessor<Reservation> reservationAccessor,IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor, DDRecognizer dDRecognizer) : base(nameof(ReserveTableDialog))
         {
 
@@ -77,7 +73,6 @@ namespace Daba_Delicious.Dialogs
 
             if (choice.Value.Equals("yes"))
             {
-               
                 var reservation = await _reservationAccessor.GetAsync(stepContext.Context, () => new Reservation(), cancellationToken);
 
                 var myDate = DateTimeOffset.Parse(reservation.Time);
@@ -95,8 +90,6 @@ namespace Daba_Delicious.Dialogs
 
                     return await this.ShowDateTimeAdaptiveCardAsync(stepContext, cancellationToken);
                 }
-                //book
-                
             }
             else
             {
@@ -105,33 +98,46 @@ namespace Daba_Delicious.Dialogs
         }
 
         private async Task<DialogTurnResult> GetChoiceAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            dynamic obj = stepContext.Context.Activity.Value.ToString().Replace("{{","{");
-            obj = stepContext.Context.Activity.Value.ToString().Replace("}}","}");
-            User user = JsonConvert.DeserializeObject<User>(obj);
+        {  //cancels reservations..
+            if (stepContext.Context.Activity.Value == null)
+            {
+                var user = await _userAccessor.GetAsync(stepContext.Context, () =>  new User(), cancellationToken);
 
-            var reservation = await _reservationAccessor.GetAsync(stepContext.Context, () => new Reservation(), cancellationToken);
-            var date = new DateTime(user.Date.Year,user.Date.Month,user.Date.Day,user.Time.Hour,user.Time.Minute,user.Time.Second);
-            reservation.Time = date.ToString("O");
-            await _reservationAccessor.SetAsync(stepContext.Context,reservation, cancellationToken);
+                var reply = new CardManager().GetMenuSuggestionReply(user,stepContext.Context.Activity.CreateReply());
 
-            var choices = new List<Choice>();
-            choices.Add(new Choice()
-            {
-                Value = "no",
-                Synonyms = new List<string>() { "nope", "naaah", "cancel" }
-            });
-            choices.Add(new Choice()
-            {
-                Value = "yes",
-                Synonyms = new List<string>() { "yeah", "yes", "yup","please go head" },
-            });
-        
-            return await stepContext.PromptAsync("ConfirmReservation", new PromptOptions()
-            {
-                Prompt = MessageFactory.Text($"Alright! Reservation on **{date.Date.ToString("dd-MM-yyyy")} {date.ToString("hh:mm tt")}** Is that ok?"),
-                Choices = choices
-            }, cancellationToken);
+                await stepContext.Context.SendActivityAsync(reply, cancellationToken);
+
+                return await stepContext.EndDialogAsync(null,cancellationToken);
+            }
+            else {
+
+                dynamic obj = stepContext.Context.Activity.Value.ToString().Replace("{{", "{");
+                obj = stepContext.Context.Activity.Value.ToString().Replace("}}", "}");
+                User user = JsonConvert.DeserializeObject<User>(obj);
+
+                var reservation = await _reservationAccessor.GetAsync(stepContext.Context, () => new Reservation(), cancellationToken);
+                var date = new DateTime(user.Date.Year, user.Date.Month, user.Date.Day, user.Time.Hour, user.Time.Minute, user.Time.Second);
+                reservation.Time = date.ToString("O");
+                await _reservationAccessor.SetAsync(stepContext.Context, reservation, cancellationToken);
+
+                var choices = new List<Choice>();
+                choices.Add(new Choice()
+                {
+                    Value = "no",
+                    Synonyms = new List<string>() { "nope", "naaah", "cancel" }
+                });
+                choices.Add(new Choice()
+                {
+                    Value = "yes",
+                    Synonyms = new List<string>() { "yeah", "yes", "yup", "please go head" },
+                });
+
+                return await stepContext.PromptAsync("ConfirmReservation", new PromptOptions()
+                {
+                    Prompt = MessageFactory.Text($"Alright! Reservation on **{date.Date.ToString("dd-MM-yyyy")} {date.ToString("hh:mm tt")}** Is that ok?"),
+                    Choices = choices
+                }, cancellationToken);
+            }
         }
 
         private async Task<DialogTurnResult> ShowDateTimeAdaptiveCardAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)

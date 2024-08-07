@@ -14,9 +14,8 @@ namespace Daba_Delicious.Cards
 {
     public class CardManager
     {
-        public IMessageActivity GetMenuSuggestionReply(User user)
+        public IMessageActivity GetMenuSuggestionReply(User user,Activity reply)
         {
-            var reply = MessageFactory.Text($"Hi, {user.Name}!😊.Welcome to Dhaba Delicious!Be ready to enjoy a unique dining experience that will keep you smiling even when you get home. 😊");
 
             reply.SuggestedActions = new SuggestedActions()
             {
@@ -24,7 +23,7 @@ namespace Daba_Delicious.Cards
         {
             new CardAction() { Title = "Reserve Table",Image = "https://dhabadeliciousstorage.blob.core.windows.net/icons/bell_3530694.png",Type = ActionTypes.ImBack, Value = "Reserve Table" },
             new CardAction() { Title = "Menu",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/food_icon.png", Type = ActionTypes.ImBack, Value = "Menu"},
-            new CardAction() { Title = "Discover Drinks",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/beer_931949.png", Type = ActionTypes.ImBack, Value = "Beer"},
+            new CardAction() { Title = "Exciting Offers",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/offer_7261257.png", Type = ActionTypes.ImBack, Value = "exciting offers"},
             new CardAction() { Title = "Locate Us",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/locate_us.png", Type = ActionTypes.ImBack, Value = "Locate"},
             new CardAction() { Title = "Contact",Image="https://dhabadeliciousstorage.blob.core.windows.net/icons/contact_2967892.png", Type = ActionTypes.ImBack, Value = "Contact" },
         },
@@ -107,7 +106,7 @@ namespace Daba_Delicious.Cards
             dateTimeAdapativeObj.schema = "http://adaptivecards.io/schemas/adaptive-card.json";
             dateTimeAdapativeObj.body[1].columns[1].items[0].min = restaurant.open.ToString("hh:mm");
             dateTimeAdapativeObj.body[1].columns[1].items[0].max = restaurant.close.ToString("hh:mm");
-            dateTimeAdapativeObj.body[1].columns[1].items[0].errorMessage = $"{restaurant.name} is open between {restaurant.open.ToString("hh:mm tt")}-{restaurant.close.ToString("hh:mm tt")}";
+            dateTimeAdapativeObj.body[1].columns[1].items[0].errorMessage = $"{restaurant.name} is open between {restaurant.open.ToString("hh:mm tt")}-{restaurant.close.ToString("hh:mm tt")} ⚠️";
             return new Attachment()
             {
                 Content = dateTimeAdapativeObj,
@@ -115,7 +114,6 @@ namespace Daba_Delicious.Cards
             };
         }
     }
-
 }
 
 

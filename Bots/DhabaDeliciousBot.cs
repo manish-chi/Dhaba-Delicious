@@ -48,7 +48,7 @@ namespace Daba_Delicious.Bots
             _dialogs = new DialogSet(dialogStateAccessor);
             _dialogs.Add(new DDLuisDialog(configuration,userState,ddrecognizer));
             _dialogs.Add(new ContactDialog(configuration, userState));
-            _dialogs.Add(new DrinksDialog(configuration, userState));
+            _dialogs.Add(new OffersDialog(configuration, userState));
             _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_restaurantDataAccessor,_dDRecognizer));
             _dialogs.Add(new MenuDialog(configuration, userState));
 
@@ -132,7 +132,11 @@ namespace Daba_Delicious.Bots
 
         public async Task SendWelcomeMessageAsync(ITurnContext context, User user, CancellationToken cancellationToken)
         {
-            var reply = new CardManager().GetMenuSuggestionReply(user);
+            var reply = MessageFactory.Text($"Hi, {user.Name}!😊.Welcome to Dhaba Delicious!Be ready to enjoy a unique dining experience that will keep you smiling even when you get home. 😊");
+
+            await context.SendActivityAsync(reply, cancellationToken);
+
+            reply = new CardManager().GetMenuSuggestionReply(user,reply.CreateReply()) as Activity;
             // await context.SendActivityAsync(reply, cancellationToken);
 
             await context.SendActivityAsync(reply, cancellationToken);

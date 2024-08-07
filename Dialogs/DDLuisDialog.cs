@@ -44,8 +44,8 @@ namespace Daba_Delicious.Dialogs
                 case DDCognitiveModel.Intent.menu:
                     await outerDc.BeginDialogAsync(nameof(MenuDialog), null, cancellationToken);
                     break;
-                case DDCognitiveModel.Intent.drinks:
-                    await outerDc.BeginDialogAsync(nameof(DrinksDialog), null, cancellationToken);
+                case DDCognitiveModel.Intent.offers:
+                    await outerDc.BeginDialogAsync(nameof(OffersDialog), null, cancellationToken);
                     break;
                 case DDCognitiveModel.Intent.locate:
                     await outerDc.BeginDialogAsync(nameof(LocateDialog), null, cancellationToken);
@@ -64,6 +64,11 @@ namespace Daba_Delicious.Dialogs
             }
 
             return EndOfTurn;
+        }
+
+        public override Task<DialogTurnResult> ResumeDialogAsync(DialogContext outerDc, DialogReason reason, object result = null, CancellationToken cancellationToken = default)
+        {
+            return this.BeginDialogAsync(outerDc, null, cancellationToken);
         }
     }
 }

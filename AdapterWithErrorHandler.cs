@@ -36,7 +36,7 @@ namespace Daba_Delicious
                 }
                 else {
 
-                    var reply = MessageFactory.Text("Sorry, we're having trouble reaching the service right now. We'll get it fixed as soon as possible.😊");
+                    var reply = MessageFactory.Text("Sorry, we're experiencing downtime with our services. We'll get it fixed as soon as possible.😊");
                     // Send a message to the user
                     await turnContext.SendActivityAsync(reply);
                 }
