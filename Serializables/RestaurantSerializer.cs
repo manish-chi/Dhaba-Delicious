@@ -1,5 +1,5 @@
 ﻿using System;
-
+using Dhaba_Delicious.Models;
 namespace Dhaba_Delicious.Serializables
 {
 
@@ -21,6 +21,8 @@ namespace Dhaba_Delicious.Serializables
         public DateTime createdAt { get; set; }
         public int ratingsAverage { get; set; }
         public int ratingsQuantity { get; set; }
+
+        public Item[] items { get; set; }
         public string photo { get; set; }
         public int __v { get; set; }
     }

@@ -44,7 +44,7 @@ namespace Daba_Delicious.Dialogs
             this._userAccessor = userAccessor;
             this._configuration = configuration;
             this._dDRecognizer = dDRecognizer;
-            this._restaurantManager = new RestaurantManager(new RestaurantClient(configuration),restaurantDataAccessor,new CardManager());
+            this._restaurantManager = new RestaurantManager(configuration,new RestaurantClient(configuration),restaurantDataAccessor,null,new CardManager());
             this._reservationManager = new ReservationManager(new ReservationClient(configuration));
             
             this._userAccessor = userAccessor;

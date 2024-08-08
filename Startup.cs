@@ -9,9 +9,11 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Azure.Blobs;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Connector.Authentication;
+using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Collections.Concurrent;
 
 namespace Daba_Delicious
 {
@@ -56,6 +58,9 @@ namespace Daba_Delicious
             services.AddSingleton(conversationState);
 
             services.AddSingleton<DDRecognizer>();
+
+            // Create a global hashset for our ConversationReferences
+            services.AddSingleton<ConcurrentDictionary<string, ConversationReference>>();
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
             services.AddTransient<IBot, DhabaDeliciousBot>();

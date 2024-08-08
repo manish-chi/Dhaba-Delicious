@@ -4,6 +4,8 @@ using Daba_Delicious.Cards;
 using Daba_Delicious.Dialogs;
 using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
+using Dhaba_Delicious.Dialogs;
+using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
@@ -11,6 +13,7 @@ using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
@@ -27,21 +30,26 @@ namespace Daba_Delicious.Bots
         private DDRecognizer _dDRecognizer;
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
-        private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
+        private IStatePropertyAccessor<List<RestaurantData>> _listOfRestaurantsAccessor;
+        private IStatePropertyAccessor<Cart> _cartAccessor;
+        private IStatePropertyAccessor<Order> _orderAccessor;
+        private readonly ConcurrentDictionary<string, ConversationReference> _conversationReferences;
 
         private DialogSet _dialogs { get; set; }
 
         protected IConfiguration configuration;
 
         
-        public DhabaDeliciousBot(IConfiguration configuration,DDRecognizer ddrecognizer,UserState userState,ConversationState conversationState)
+        public DhabaDeliciousBot(IConfiguration configuration,DDRecognizer ddrecognizer,UserState userState,ConversationState conversationState, ConcurrentDictionary<string, ConversationReference> conversationReferences)
         {
             this.userState = userState;
             this.conversationState = conversationState;
 
             _userAccessor = userState.CreateProperty<User>("User");
             _reservationAccessor = userState.CreateProperty<Reservation>("Reservation");
-            this._restaurantDataAccessor = userState.CreateProperty<List<RestaurantData>>("RestaurantData");
+            this._listOfRestaurantsAccessor = userState.CreateProperty<List<RestaurantData>>("RestaurantData");
+            this._orderAccessor = userState.CreateProperty<Order>("Order");
+            _conversationReferences = conversationReferences;
 
             var dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
 
@@ -49,8 +57,9 @@ namespace Daba_Delicious.Bots
             _dialogs.Add(new DDLuisDialog(configuration,userState,ddrecognizer));
             _dialogs.Add(new ContactDialog(configuration, userState));
             _dialogs.Add(new OffersDialog(configuration, userState));
-            _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_restaurantDataAccessor,_dDRecognizer));
-            _dialogs.Add(new MenuDialog(configuration, userState));
+            _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_listOfRestaurantsAccessor,_dDRecognizer));
+            _dialogs.Add(new MenuDialog(configuration, userState,_listOfRestaurantsAccessor,_userAccessor,_orderAccessor));
+            _dialogs.Add(new CartDialog(configuration, userState));
 
         }
 
@@ -65,6 +74,8 @@ namespace Daba_Delicious.Bots
 
             if(turnContext.Activity.Type == ActivityTypes.Message)
             {
+                AddConversationReference(turnContext.Activity as Activity);
+
                 await turnContext.SendActivitiesAsync(
             new Activity[] {
                 new Activity { Type = ActivityTypes.Typing },
@@ -93,7 +104,11 @@ namespace Daba_Delicious.Bots
             await userState.SaveChangesAsync(turnContext, true, cancellationToken);
             await conversationState.SaveChangesAsync(turnContext, true, cancellationToken);
         }
-
+        private void AddConversationReference(Activity activity)
+        {
+            var conversationReference = activity.GetConversationReference();
+            _conversationReferences.AddOrUpdate(conversationReference.User.Id, conversationReference, (key, newValue) => conversationReference);
+        }
         protected async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext turnContext, CancellationToken cancellationToken)
         {
             

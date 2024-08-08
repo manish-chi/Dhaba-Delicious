@@ -1,6 +1,8 @@
 ﻿using AdaptiveCards;
 using AdaptiveCards.Rendering;
+using Azure.Storage.Blobs.Models;
 using Daba_Delicious.Models;
+using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Bot.Builder;
@@ -70,6 +72,35 @@ namespace Daba_Delicious.Cards
         //    return card.ToAttachment();
         //}
 
+        public Attachment GetItemsCard(MenuItem item)
+        {
+            var action = new List<CardAction>();
+
+            action.Add(new CardAction()
+            {
+                Type = ActionTypes.PostBack,
+                Title = "Add To Cart",
+                Value =  item._id,
+            });
+
+            var images = new List<CardImage>();
+
+            images.Add(new CardImage()
+            {
+                Url = item.photo,
+            });
+
+
+            var card = new HeroCard()
+            {
+                Buttons = action,
+                Images = images,
+                Title =  item.Name,
+            };
+
+            return card.ToAttachment();
+        }
+
 
         public Attachment GetNearestRestCard(RestaurantData restaurant, NearestRestaurantAdaptiveSerializer nearAdapativeObj)
         {
@@ -112,6 +143,44 @@ namespace Daba_Delicious.Cards
                 Content = dateTimeAdapativeObj,
                 ContentType = "application/vnd.microsoft.card.adaptive",
             };
+        }
+
+        public Attachment createRecieptCard(Order order,String paymentUrl)
+        {
+            var receiptItems = new List<ReceiptItem>();
+
+            foreach(var menuItem in order.items)
+            {
+                receiptItems.Add(new ReceiptItem()
+                {
+                    Title = menuItem.Name,
+                    Price = menuItem.Price,
+                    Quantity = "2",
+                });
+
+            }
+
+            var card = new ReceiptCard
+            {
+                Title = order.User.Name,
+                Facts = new List<Fact> {
+                        new Fact($"Email:{order.User.Email}")
+                },
+                Items = receiptItems,
+                Tax = "2000",
+                Total = "8000",
+                Buttons = new List<CardAction> { new CardAction() {
+
+                 Text = "Pay",
+                 Type = ActionTypes.OpenUrl,
+                 DisplayText = "Pay",
+                 Value = paymentUrl,
+                }
+            }
+
+            };
+
+            return card.ToAttachment();
         }
     }
 }
