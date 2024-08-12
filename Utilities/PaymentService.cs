@@ -21,7 +21,7 @@ namespace Dhaba_Delicious.Utilities
         {
             HttpClient client = new HttpClient();
 
-            string json = JsonConvert.SerializeObject(obj);
+            string json = JsonConvert.SerializeObject(obj.finalizedItems);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");

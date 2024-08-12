@@ -4,19 +4,24 @@ using Azure.Storage.Blobs.Models;
 using Daba_Delicious.Models;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
+using Dhaba_Delicious.Serializables.Menu;
+using Dhaba_Delicious.Utilities;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Bot.Schema;
 using Microsoft.Recognizers.Text.NumberWithUnit.English;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using static System.Net.WebRequestMethods;
 
 namespace Daba_Delicious.Cards
 {
     public class CardManager
     {
-        public IMessageActivity GetMenuSuggestionReply(User user,Activity reply)
+        public IMessageActivity GetMenuSuggestionReply(Activity reply)
         {
 
             reply.SuggestedActions = new SuggestedActions()
@@ -34,6 +39,7 @@ namespace Daba_Delicious.Cards
             return reply;
 
         }
+
 
         //public Attachment GetNearestRestCard(RestaurantData restaurant, NearestRestaurantAdaptiveSerializer nearAdapativeObj)
         //{
@@ -72,34 +78,34 @@ namespace Daba_Delicious.Cards
         //    return card.ToAttachment();
         //}
 
-        public Attachment GetItemsCard(MenuItem item)
-        {
-            var action = new List<CardAction>();
+        //public Attachment GetItemsCard(MenuItem item)
+        //{
+        //    var action = new List<CardAction>();
 
-            action.Add(new CardAction()
-            {
-                Type = ActionTypes.PostBack,
-                Title = "Add To Cart",
-                Value =  item._id,
-            });
+        //    action.Add(new CardAction()
+        //    {
+        //        Type = ActionTypes.PostBack,
+        //        Title = "Add To Cart",
+        //        Value =  item._id,
+        //    });
 
-            var images = new List<CardImage>();
+        //    var images = new List<CardImage>();
 
-            images.Add(new CardImage()
-            {
-                Url = item.photo,
-            });
+        //    images.Add(new CardImage()
+        //    {
+        //        Url = item.photo,
+        //    });
 
 
-            var card = new HeroCard()
-            {
-                Buttons = action,
-                Images = images,
-                Title =  item.Name,
-            };
+        //    var card = new HeroCard()
+        //    {
+        //        Buttons = action,
+        //        Images = images,
+        //        Title =  item.Name,
+        //    };
 
-            return card.ToAttachment();
-        }
+        //    return card.ToAttachment();
+        //}
 
 
         public Attachment GetNearestRestCard(RestaurantData restaurant, NearestRestaurantAdaptiveSerializer nearAdapativeObj)
@@ -149,38 +155,47 @@ namespace Daba_Delicious.Cards
         {
             var receiptItems = new List<ReceiptItem>();
 
-            foreach(var menuItem in order.items)
+            var calculatorService = new CaculatorService();
+
+            foreach(var item in order.finalizedItems)
             {
                 receiptItems.Add(new ReceiptItem()
                 {
-                    Title = menuItem.Name,
-                    Price = menuItem.Price,
-                    Quantity = "2",
+                    Image = new CardImage() { Url = item.Image },
+                    Title = item.Name,
+                    Price = calculatorService.CalculatePricePerItem(item).ToString(),
+                    Quantity = item.Quantity.ToString(),
                 });
-
             }
 
             var card = new ReceiptCard
             {
-                Title = order.User.Name,
-                Facts = new List<Fact> {
-                        new Fact($"Email:{order.User.Email}")
-                },
+                Title = "Order Summary",
                 Items = receiptItems,
-                Tax = "2000",
-                Total = "8000",
-                Buttons = new List<CardAction> { new CardAction() {
-
-                 Text = "Pay",
-                 Type = ActionTypes.OpenUrl,
-                 DisplayText = "Pay",
-                 Value = paymentUrl,
-                }
-            }
-
+                Total = calculatorService.CalculateTotalAmount().ToString(),
+                Tax = calculatorService.TaxToBePaid.ToString(),
             };
 
             return card.ToAttachment();
+        }
+
+        internal Attachment GetMenuCard(MenuItem item,MenuCardSerializer menuCardSkeleton)
+        {
+
+            var foodCategoryUrl = item.type == "veg" ? "https://dhabadeliciousstorage.blob.core.windows.net/icons/icons8-veg-48.png" : "https://dhabadeliciousstorage.blob.core.windows.net/icons/icons8-non-veg-48.png";
+
+            menuCardSkeleton.schema = "http://adaptivecards.io/schemas/adaptive-card.json";
+            menuCardSkeleton.body[0].url = item.image; //menu item url,
+            menuCardSkeleton.body[1].columns[0].items[0].text = item.name;
+            menuCardSkeleton.body[1].columns[1].items[0].url = foodCategoryUrl; //veg/nonveg icon.
+            menuCardSkeleton.body[3].items[0].text = item.description;
+            menuCardSkeleton.body[2].columns[1].items[0].text = $"{item.price_in_INR}/-";
+            menuCardSkeleton.body[4].columns[0].items[0].selectAction.data = new { action = item._id };
+            return new Attachment()
+            {
+                Content = menuCardSkeleton,
+                ContentType = "application/vnd.microsoft.card.adaptive",
+            };
         }
     }
 }

@@ -49,6 +49,7 @@ namespace Daba_Delicious.Bots
             _reservationAccessor = userState.CreateProperty<Reservation>("Reservation");
             this._listOfRestaurantsAccessor = userState.CreateProperty<List<RestaurantData>>("RestaurantData");
             this._orderAccessor = userState.CreateProperty<Order>("Order");
+            this._cartAccessor = userState.CreateProperty<Cart>("Cart");
             _conversationReferences = conversationReferences;
 
             var dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
@@ -59,7 +60,7 @@ namespace Daba_Delicious.Bots
             _dialogs.Add(new OffersDialog(configuration, userState));
             _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_listOfRestaurantsAccessor,_dDRecognizer));
             _dialogs.Add(new MenuDialog(configuration, userState,_listOfRestaurantsAccessor,_userAccessor,_orderAccessor));
-            _dialogs.Add(new CartDialog(configuration, userState));
+            _dialogs.Add(new DishesDialog(configuration,_cartAccessor,_listOfRestaurantsAccessor,userState,ddrecognizer));
 
         }
 
@@ -151,7 +152,7 @@ namespace Daba_Delicious.Bots
 
             await context.SendActivityAsync(reply, cancellationToken);
 
-            reply = new CardManager().GetMenuSuggestionReply(user,reply.CreateReply()) as Activity;
+            reply = new CardManager().GetMenuSuggestionReply(reply.CreateReply()) as Activity;
             // await context.SendActivityAsync(reply, cancellationToken);
 
             await context.SendActivityAsync(reply, cancellationToken);

@@ -1,6 +1,7 @@
 ﻿using Daba_Delicious.Clu;
 using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
+using Dhaba_Delicious.Dialogs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
@@ -44,6 +45,9 @@ namespace Daba_Delicious.Dialogs
                 case DDCognitiveModel.Intent.menu:
                     await outerDc.BeginDialogAsync(nameof(MenuDialog), null, cancellationToken);
                     break;
+                case DDCognitiveModel.Intent.dishes:
+                    await outerDc.BeginDialogAsync(nameof(DishesDialog), null, cancellationToken);
+                    break;
                 case DDCognitiveModel.Intent.offers:
                     await outerDc.BeginDialogAsync(nameof(OffersDialog), null, cancellationToken);
                     break;
@@ -66,9 +70,9 @@ namespace Daba_Delicious.Dialogs
             return EndOfTurn;
         }
 
-        public override Task<DialogTurnResult> ResumeDialogAsync(DialogContext outerDc, DialogReason reason, object result = null, CancellationToken cancellationToken = default)
+        public override async  Task<DialogTurnResult> ResumeDialogAsync(DialogContext outerDc, DialogReason reason, object result = null, CancellationToken cancellationToken = default)
         {
-            return this.BeginDialogAsync(outerDc, null, cancellationToken);
+            return await this.ContinueDialogAsync(outerDc, cancellationToken);
         }
     }
 }

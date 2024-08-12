@@ -14,6 +14,7 @@ using Dhaba_Delicious.Models;
 using Antlr4.Runtime;
 using System.Linq;
 using Newtonsoft.Json;
+using Dhaba_Delicious.Dialogs;
 
 namespace Daba_Delicious.Dialogs
 {
@@ -40,9 +41,9 @@ namespace Daba_Delicious.Dialogs
            {
                 GetNearBuyRestaurantAsync,
                 ShowMenuLinkAsync,
-                GetMenuItemsAsync,
-                AddToCartAsync,
-               CheckOutAsync
+                //GetMenuItemsAsync,
+                //AddToCartAsync,
+                //CheckOutAsync
                 //SaveBookingDetailsAsync,
            };
 
@@ -51,48 +52,41 @@ namespace Daba_Delicious.Dialogs
             Dialogs.Add(new ChoicePrompt("ConfirmReservation", null, null));
         }
 
-        //private async Task<DialogTurnResult> ShowRecieptCardAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        //private async Task<DialogTurnResult> CheckOutAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         //{
-        //    //User
-        //    //Restarurant 
-        //    //Items
-
-        //    _cardManager.createRecieptCard();
+        //    //Trigger this with backchannel api.
+        //    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Your order has been placed!"),cancellationToken);
+        //    return EndOfTurn;
         //}
 
-        private async Task<DialogTurnResult> CheckOutAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            //Trigger this with backchannel api.
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Your order has been placed!"),cancellationToken);
-            return EndOfTurn;
-        }
+        //private async Task<DialogTurnResult> AddToCartAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        //{
+        //    var itemID = stepContext.Context.Activity.Text;
+        //    //check if user wants to continue the menu..?
+        //    //check if user wants to continue the checkout.
 
-        private async Task<DialogTurnResult> AddToCartAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var itemID = stepContext.Context.Activity.Text;
-            //check if user wants to continue the menu..?
-            //check if user wants to continue the checkout.
+        //    var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
 
-            var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
+        //    var reply = await
+        //      _restaurantManager.GetReceiptCardAsync(stepContext.Context,order);
 
-            var reply = await
-              _restaurantManager.GetReceiptCardAsync(order);
+        //    await stepContext.Context.SendActivityAsync(reply, cancellationToken);
 
-            await stepContext.Context.SendActivityAsync(reply, cancellationToken);
+        //    return EndOfTurn;
+        //}
 
-            return EndOfTurn;
-        }
+        //private async Task<DialogTurnResult> GetMenuItemsAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        //{
+        //    //Show menu items to the user..
 
-        private async Task<DialogTurnResult> GetMenuItemsAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            //Show menu items to the user..
+        //    await stepContext.BeginDialogAsync(nameof(DishesDialog), cancellationToken);
 
-           var reply =  await _restaurantManager.GetMenuItemsCardAsync(stepContext.Context,cancellationToken);
-           
-           await stepContext.Context.SendActivityAsync(reply,cancellationToken);
+        //    //var reply = await _restaurantManager.GetMenuItemsCardAsync(stepContext.Context, cancellationToken);
 
-           return EndOfTurn;
-        }
+        //    //await stepContext.Context.SendActivityAsync(reply, cancellationToken);
+
+        //    return EndOfTurn;
+        //}
 
 
         private async Task<DialogTurnResult> ShowMenuLinkAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -101,11 +95,13 @@ namespace Daba_Delicious.Dialogs
 
             dynamic submitData = stepContext.Context.Activity.Value;
 
-            var obj = JsonConvert.SerializeObject(submitData.action);
+            var obj = submitData.action.ToString();
+
+            
 
             var listOfRestaurants = await _listOfRestaurantsAccessor.GetAsync(stepContext.Context, () => new List<RestaurantData>(), cancellationToken);
 
-            var restaurant =  listOfRestaurants.Find(x => x._id == "66af3fdbb278586bf2754127");
+            var restaurant =  listOfRestaurants.Find(x => x._id == obj.ToString());
             //make a api call to get restaurant details.
             order.RestaurantData = restaurant;
 
@@ -115,9 +111,9 @@ namespace Daba_Delicious.Dialogs
 
             await stepContext.Context.SendActivityAsync("If you have any questions or need suggestions, I’m here to help!");
 
-            await stepContext.Context.SendActivityAsync("We also provide few of our signature dishes for online delivery. Would you like to place an order?");
+            await stepContext.Context.SendActivityAsync("We also provide few of our signature dishes for online delivery, Please type *I want to order panner butter masala*");
 
-            return EndOfTurn;
+            return await stepContext.EndDialogAsync(null,cancellationToken);
         }
 
         private async Task<DialogTurnResult> GetNearBuyRestaurantAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)

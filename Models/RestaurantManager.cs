@@ -2,6 +2,7 @@
 using Daba_Delicious.Interfaces;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
+using Dhaba_Delicious.Serializables.Menu;
 using Dhaba_Delicious.Utilities;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs.Declarative.Parsers;
@@ -99,51 +100,67 @@ namespace Daba_Delicious.Models
             //return reply;
         }
 
-        public async Task<IMessageActivity> GetMenuItemsCardAsync(ITurnContext context,CancellationToken cancellationToken)
+        public async Task<IMessageActivity> GetMenuItemsCardAsync(ITurnContext context,CancellationToken cancellationToken,string menuItem)
         {
+            var reply = context.Activity.CreateReply();
+
+            var cardArray = new List<Microsoft.Bot.Schema.Attachment>();
+
             var order = await _orderAccessor.GetAsync(context, () => new Order(), cancellationToken);
 
-            var menuItems = new List<MenuItem>();
+            var menuItems = await _restaurantService.GetMenuItemByName(order, menuItem);
 
-            var item1 = new MenuItem()
+            order.retrivedItemsPerRequest = menuItems.data.ToList();
+
+            if (menuItems.data.Length == 0)
             {
-                Name = "Paneer Butter Masala",
-                photo = "https://dhabadeliciousstorage.blob.core.windows.net/restaurant-images/restaurant-2-veg.jpg",
-                Price = "235",
-                Ratings = "5",
-                Quantity = "1",
-                Restaurants = [new RestaurantData() { _id = "66af3fdbb278586bf2754125" }, new RestaurantData() { _id = "66af3fdbb278586bf2754124" }],
-                _id = "908123123123",
-            };
+                reply = context.Activity.CreateReply();
 
-            var item2 = new MenuItem()
+                return MessageFactory.Text($"Sorry,We don't serve {menuItem} at the moment. 🙂.You can please try other dishes from our menu..");
+            }
+
+            var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetMenuCardUri"]);
+
+            foreach (var item in menuItems.data)
             {
-                Name = "Tomato Soup",
-                photo = "https://dhabadeliciousstorage.blob.core.windows.net/restaurant-images/restaurant-1-veg.jpg",
-                Price = "180",
-                Ratings = "5",
-                Quantity = "1",
-                Restaurants = [new RestaurantData() { _id = "66af3fdbb278586bf2754125" }, new RestaurantData() { _id = "66af3fdbb278586bf2754124" }],
-                _id = "9081231234234",
-            };
+                var menuCardSkeleton = JsonConvert.DeserializeObject<MenuCardSerializer>(result.data.ToString());
 
-            menuItems.Add(item1);
-            menuItems.Add(item2);
-
-            order.items = menuItems;
+                cardArray.Add(_cardManager.GetMenuCard(item, menuCardSkeleton));
+            }
 
             await _orderAccessor.SetAsync(context, order, cancellationToken);
 
-            return MessageFactory.Attachment(_cardManager.GetItemsCard(item1));
+
+            reply.Attachments = cardArray;
+
+            reply.AttachmentLayout = AttachmentLayoutTypes.Carousel;
+
+            return reply;
         }
 
-        public async Task<IMessageActivity> GetReceiptCardAsync(Order order)
+        public async Task<IMessageActivity> GetReceiptCardAsync(ITurnContext context, CancellationToken cancellationToken, Order order)
         {
             var paymentUrl = await _paymentManager.MakePaymentAsync(order);
 
-             var attachment = _cardManager.createRecieptCard(order,paymentUrl);
+            var attachment = _cardManager.createRecieptCard(order,paymentUrl);
 
-            return MessageFactory.Attachment(attachment);
+            await _orderAccessor.SetAsync(context, order, cancellationToken);
+
+            var reply = context.Activity.CreateReply();
+
+            reply.SuggestedActions = new SuggestedActions()
+            {
+                Actions = new List<CardAction>()
+                {
+                  new CardAction() { Title = "Pay",Type = ActionTypes.OpenUrl, Value = paymentUrl },
+                  new CardAction() { Title = "Cancel",Type = ActionTypes.PostBack, Value = "cancel" },
+                }
+            };
+
+            reply.Attachments.Add(attachment);
+            reply.AttachmentLayout = AttachmentLayoutTypes.Carousel;
+
+            return reply;
         }
     }
 }

@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Builder;
 using Daba_Delicious.Models;
 using NuGet.Packaging.Signing;
 using Dhaba_Delicious.Serializables;
+using Dhaba_Delicious.Models;
+using Dhaba_Delicious.Serializables.Menu;
 
 namespace Daba_Delicious.Utilities
 {
@@ -34,6 +36,29 @@ namespace Daba_Delicious.Utilities
                 string responseBody = await response.Content.ReadAsStringAsync();
                 responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
                 var res = JsonConvert.DeserializeObject<RestaurantSerializer>(responseBody);
+                return res;
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+                return null;
+            }
+        }
+
+        public async Task<MenuItemByNameSerializer> GetMenuItemByName(Order order,string menuItemName)
+        {
+            HttpClient client = new HttpClient();
+
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync($"http://localhost:3000/api/v1/restaurants/{order.RestaurantData._id}/menu/{menuItemName}");
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
+                var res = JsonConvert.DeserializeObject<MenuItemByNameSerializer>(responseBody);
                 return res;
             }
             catch (HttpRequestException e)

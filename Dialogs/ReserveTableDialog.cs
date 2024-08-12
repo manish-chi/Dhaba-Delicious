@@ -5,6 +5,7 @@ using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
 using Daba_Delicious.Utilities;
 using Dhaba_Delicious.Serializables;
+using Dhaba_Delicious.Serializables.Menu;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
@@ -103,7 +104,7 @@ namespace Daba_Delicious.Dialogs
             {
                 var user = await _userAccessor.GetAsync(stepContext.Context, () =>  new User(), cancellationToken);
 
-                var reply = new CardManager().GetMenuSuggestionReply(user,stepContext.Context.Activity.CreateReply());
+                var reply = new CardManager().GetMenuSuggestionReply(stepContext.Context.Activity.CreateReply());
 
                 await stepContext.Context.SendActivityAsync(reply, cancellationToken);
 

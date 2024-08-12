@@ -10,7 +10,6 @@ namespace Daba_Delicious.Models
         public string PhoneNumber { get; set; }
         public DateTime Time { set; get; }
         public DateTime Date { get; set; }
-
         public Location Location { get; set; }
     }
 
