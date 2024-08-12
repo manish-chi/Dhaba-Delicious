@@ -15,6 +15,7 @@ using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using NuGet.Packaging.Signing;
 using RestroQnABot.Dialogs;
 using System;
 using System.Collections.Generic;
@@ -145,28 +146,36 @@ namespace Dhaba_Delicious.Dialogs
         {
             var result = await _dDRecognizer.RecognizeAsync<DDCognitiveModel>(stepContext.Context, cancellationToken);
 
-            if(result.Entities.Entities.Length == 0)
+            var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
+
+            if (result.Entities.Entities.Length == 0)
             {
                 await stepContext.Context.SendActivityAsync(MessageFactory.Text("Sorry, we don't provide this item at the moment."),cancellationToken);
 
-                var menuSuggestion = _cardManager.GetMenuSuggestionReply(stepContext.Context.Activity);
+                if(order.cart.Items.Count > 0)
+                {
+                   await this.CheckIfCheckOutOrMoreItemsAsync(stepContext, cancellationToken);
+                }
+                else
+                {
+                    var menuSuggestion = _cardManager.GetMenuSuggestionReply(stepContext.Context.Activity);
 
-                await stepContext.Context.SendActivityAsync(menuSuggestion, cancellationToken);
+                    await stepContext.Context.SendActivityAsync(menuSuggestion, cancellationToken);
 
-                return await stepContext.EndDialogAsync(null, cancellationToken);
+                    return await stepContext.EndDialogAsync(null, cancellationToken);
+                }
             }
-
-            var foodEntity = result.Entities.GetFood();
 
             var drinkEntity = result.Entities.GetDrink();
 
+            var foodEntity = result.Entities.GetFood();
 
-            if (foodEntity.Length > 0
-                || drinkEntity.Length > 0)
+            result.AddFoodItems(result);
+             
+
+            if (foodEntity.Length > 0 || drinkEntity.Length > 0)
             {
-
-
-                var reply = await _restaurantManager.GetMenuItemsCardAsync(stepContext.Context, cancellationToken,foodEntity.FirstOrDefault().Text);
+                var reply = await _restaurantManager.GetMenuItemsCardAsync(stepContext.Context, cancellationToken,result.FoodItemNames);
 
                 if(reply.Attachments.Count == 0) //that means restaurant doesn't serve the item
                 {

@@ -1,6 +1,7 @@
 ﻿using Daba_Delicious.Clu;
 using Microsoft.Bot.Builder;
 using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using static System.Net.Mime.MediaTypeNames;
@@ -9,6 +10,11 @@ namespace Daba_Delicious.Models
 {
     public class DDCognitiveModel : IRecognizerConvert
     {
+        public List<String> FoodItemNames;
+        public DDCognitiveModel()
+        {
+            FoodItemNames = new List<String>();
+        }
 
         public enum Intent
         {
@@ -31,6 +37,30 @@ namespace Daba_Delicious.Models
         public CluEntities Entities { get; set; }
 
         public IDictionary<string, object> Properties { get; set; }
+
+        public void AddFoodItems(dynamic result)
+        {
+            var foodEntity = result.Entities.GetFood();
+
+            if (foodEntity.Length > 0) { 
+                    
+                foreach(var entity in foodEntity)
+                {
+                    FoodItemNames.Add(entity.Text);
+                }
+            }
+
+            var drinkEntity = result.Entities.GetDrink();
+
+            if (drinkEntity.Length > 0) {
+
+                foreach (var entity in drinkEntity)
+                {
+                    FoodItemNames.Add(entity.Text);
+                }
+
+            }
+        }
 
         public void Convert(dynamic result)
         {

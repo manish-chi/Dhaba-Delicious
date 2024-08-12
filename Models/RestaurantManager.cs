@@ -4,6 +4,7 @@ using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
 using Dhaba_Delicious.Serializables.Menu;
 using Dhaba_Delicious.Utilities;
+using Microsoft.AspNetCore.Mvc.TagHelpers;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs.Declarative.Parsers;
 using Microsoft.Bot.Schema;
@@ -100,7 +101,7 @@ namespace Daba_Delicious.Models
             //return reply;
         }
 
-        public async Task<IMessageActivity> GetMenuItemsCardAsync(ITurnContext context,CancellationToken cancellationToken,string menuItem)
+        public async Task<IMessageActivity> GetMenuItemsCardAsync(ITurnContext context,CancellationToken cancellationToken,List<string> menuItemNames)
         {
             var reply = context.Activity.CreateReply();
 
@@ -108,28 +109,36 @@ namespace Daba_Delicious.Models
 
             var order = await _orderAccessor.GetAsync(context, () => new Order(), cancellationToken);
 
-            var menuItems = await _restaurantService.GetMenuItemByName(order, menuItem);
+            var menuItems = await _restaurantService.GetMenuItemsByName(order, menuItemNames);
 
-            order.retrivedItemsPerRequest = menuItems.data.ToList();
+            foreach(var items in menuItems.data)
+            {
+                foreach(var item in items)
+                {
+                    order.retrivedItemsPerRequest.Add(item);
+                }
+            }
 
             if (menuItems.data.Length == 0)
             {
                 reply = context.Activity.CreateReply();
 
-                return MessageFactory.Text($"Sorry,We don't serve {menuItem} at the moment. 🙂.You can please try other dishes from our menu..");
+                return MessageFactory.Text($"Sorry,We don't serve at the moment. 🙂.You can please try other dishes from our menu..");
             }
 
             var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetMenuCardUri"]);
 
-            foreach (var item in menuItems.data)
-            {
-                var menuCardSkeleton = JsonConvert.DeserializeObject<MenuCardSerializer>(result.data.ToString());
+            foreach (var items in menuItems.data) { 
+                foreach (var item in items)
+                {
+                    var menuCardSkeleton = JsonConvert.DeserializeObject<MenuCardSerializer>(result.data.ToString());
 
-                cardArray.Add(_cardManager.GetMenuCard(item, menuCardSkeleton));
+                    cardArray.Add(_cardManager.GetMenuCard(item, menuCardSkeleton));
+
+                }
             }
 
             await _orderAccessor.SetAsync(context, order, cancellationToken);
-
 
             reply.Attachments = cardArray;
 

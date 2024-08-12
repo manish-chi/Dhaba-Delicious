@@ -11,6 +11,7 @@ using NuGet.Packaging.Signing;
 using Dhaba_Delicious.Serializables;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables.Menu;
+using System.Collections.Generic;
 
 namespace Daba_Delicious.Utilities
 {
@@ -46,7 +47,7 @@ namespace Daba_Delicious.Utilities
             }
         }
 
-        public async Task<MenuItemByNameSerializer> GetMenuItemByName(Order order,string menuItemName)
+        public async Task<MenuItemByNameSerializer> GetMenuItemsByName(Order order,List<string> menuItemNames)
         {
             HttpClient client = new HttpClient();
 
@@ -54,7 +55,7 @@ namespace Daba_Delicious.Utilities
 
             try
             {
-                HttpResponseMessage response = await client.GetAsync($"http://localhost:3000/api/v1/restaurants/{order.RestaurantData._id}/menu/{menuItemName}");
+                HttpResponseMessage response = await client.GetAsync($"http://localhost:3000/api/v1/restaurants/{order.RestaurantData._id}/menu?menuItemNames={Uri.EscapeDataString(JsonConvert.SerializeObject(menuItemNames))}");
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
