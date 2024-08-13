@@ -186,8 +186,11 @@ namespace Dhaba_Delicious.Dialogs
                         notAvailableFoodItemString += item + ",";
                     }
 
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} showing popular restaurant"), cancellationToken);
-                    return await stepContext.EndDialogAsync(null,cancellationToken);
+                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant.*Here are our popular dishes*"), cancellationToken);
+
+                    //send popular dishes card!
+
+
                 }
 
                 await stepContext.Context.SendActivityAsync(reply, cancellationToken);
