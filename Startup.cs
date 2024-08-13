@@ -1,7 +1,9 @@
 ﻿// Generated with Bot Builder V4 SDK Template for Visual Studio EchoBot v4.22.0
 
+
 using Daba_Delicious.Bots;
 using Daba_Delicious.Recognizer;
+using Dhaba_Delicious.Middlewares;
 using Dhaba_Delicious.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -38,7 +40,11 @@ namespace Daba_Delicious
             services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
             {
                 options.SerializerSettings.MaxDepth = HttpHelper.BotMessageSerializerSettings.MaxDepth;
+
             });
+
+
+           
 
             services.Configure<AppSettings>(Configuration.GetSection("ApplicationSettings"));
 
@@ -56,6 +62,8 @@ namespace Daba_Delicious
 
             var conversationState = new ConversationState(storage);
             services.AddSingleton(conversationState);
+
+            services.AddSingleton<SpellCheckMiddleware>();
 
             services.AddSingleton<DDRecognizer>();
 
