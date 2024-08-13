@@ -1,5 +1,7 @@
 ﻿// Generated with Bot Builder V4 SDK Template for Visual Studio CoreBot v4.22.0
 
+
+using Dhaba_Delicious.Middlewares;
 using Dhaba_Delicious.Models;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
@@ -14,10 +16,13 @@ namespace Daba_Delicious
     public class AdapterWithErrorHandler : CloudAdapter
     {
         private AppSettings _appSettings;
-        public AdapterWithErrorHandler(BotFrameworkAuthentication auth, IOptions<AppSettings> appSettings, ILogger<IBotFrameworkHttpAdapter> logger)
+        public AdapterWithErrorHandler(BotFrameworkAuthentication auth,SpellCheckMiddleware spellCheckMiddleWare, IOptions<AppSettings> appSettings, ILogger<IBotFrameworkHttpAdapter> logger)
             : base(auth, logger)
         {
-            _appSettings = appSettings.Value; 
+            _appSettings = appSettings.Value;
+
+
+            Use(spellCheckMiddleWare);
 
 
             OnTurnError = async (turnContext, exception) =>
