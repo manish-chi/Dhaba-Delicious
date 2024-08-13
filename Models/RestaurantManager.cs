@@ -129,6 +129,7 @@ namespace Daba_Delicious.Models
             var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetMenuCardUri"]);
 
             foreach (var items in menuItems.data) { 
+
                 foreach (var item in items)
                 {
                     var menuCardSkeleton = JsonConvert.DeserializeObject<MenuCardSerializer>(result.data.ToString());
