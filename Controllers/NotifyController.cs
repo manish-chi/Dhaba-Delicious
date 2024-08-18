@@ -7,6 +7,8 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Configuration;
+using Dhaba_Delicious.Models;
+using Dhaba_Delicious.Utilities;
 
 namespace Dhaba_Delicious.Controllers
 {
@@ -16,13 +18,17 @@ namespace Dhaba_Delicious.Controllers
     {
         private readonly IBotFrameworkHttpAdapter _adapter;
         private readonly string _appId;
+        private readonly OrderManager _orderManager;
         private readonly ConcurrentDictionary<string, ConversationReference> _conversationReferences;
+        private IStatePropertyAccessor<Order> _orderAccessor;
 
-        public NotifyController(IBotFrameworkHttpAdapter adapter, IConfiguration configuration, ConcurrentDictionary<string, ConversationReference> conversationReferences)
+        public NotifyController(IBotFrameworkHttpAdapter adapter,UserState userState, IConfiguration configuration, ConcurrentDictionary<string, ConversationReference> conversationReferences)
         {
+            _orderAccessor = userState.CreateProperty<Order>("Order");
             _adapter = adapter;
             _conversationReferences = conversationReferences;
             _appId = configuration["MicrosoftAppId"] ?? string.Empty;
+            _orderManager = new OrderManager(new OrderService(configuration));
         }
 
         public async Task<IActionResult> Get()
@@ -43,7 +49,11 @@ namespace Dhaba_Delicious.Controllers
 
         private async Task BotCallback(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            await turnContext.SendActivityAsync("Your Order has been successfully placed! Thank you! 😊");
+            var order = await _orderAccessor.GetAsync(turnContext, () => new Order(), cancellationToken);
+
+            var reply = await _orderManager.CreateOrderAsync(order);
+            
+            await turnContext.SendActivityAsync(reply);
         }
     }
 }
