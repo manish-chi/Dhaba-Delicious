@@ -34,7 +34,7 @@ namespace Daba_Delicious.Dialogs
                 return await outerDc.EndDialogAsync(cancellationToken);
             }
 
-            // Call CLU and gather any potential (Note the TurnContext has the response to the prompt.)
+            // Call CLU and gather any potential (Note the   TurnContext has the response to the prompt.)
             var cluResult = await _dDRecognizer.RecognizeAsync<DDCognitiveModel>(outerDc.Context, cancellationToken);
 
             switch(cluResult.GetTopIntent().intent)
