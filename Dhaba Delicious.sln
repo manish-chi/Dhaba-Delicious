@@ -5,13 +5,6 @@ VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dhaba Delicious", "Dhaba Delicious.csproj", "{1823A646-00C1-4924-BC54-43CA4BB217F6}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{2D20D5FD-F2C4-4E53-B5BA-A4E02B66D990}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{287D3490-35BB-4770-B5A6-54E2C4DF0C1C}"
-	ProjectSection(SolutionItems) = preProject
-		azure-deploy.yaml = azure-deploy.yaml
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,9 +18,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{287D3490-35BB-4770-B5A6-54E2C4DF0C1C} = {2D20D5FD-F2C4-4E53-B5BA-A4E02B66D990}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3E6F2BD7-3857-4558-B0F3-EF833C749AD2}

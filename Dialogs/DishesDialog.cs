@@ -179,11 +179,10 @@ namespace Dhaba_Delicious.Dialogs
 
                 if(reply.Attachments.Count == 0) //that means restaurant doesn't serve the item
                 {
-<<<<<<< HEAD
+
                     await stepContext.Context.SendActivityAsync(reply);
 
-=======
->>>>>>> 3eded62600800cdecdde6effaf7b26191ded1ff0
+
                     string notAvailableFoodItemString = string.Empty;
 
                     foreach(var item in result.FoodItemNames)
@@ -195,11 +194,8 @@ namespace Dhaba_Delicious.Dialogs
 
                     //send popular dishes card!
 
-
-<<<<<<< HEAD
                     return await stepContext.EndDialogAsync(null,cancellationToken);
-=======
->>>>>>> 3eded62600800cdecdde6effaf7b26191ded1ff0
+
                 }
 
                 await stepContext.Context.SendActivityAsync(reply, cancellationToken);
