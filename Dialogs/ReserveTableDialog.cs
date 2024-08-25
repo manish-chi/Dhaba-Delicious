@@ -80,9 +80,9 @@ namespace Daba_Delicious.Dialogs
 
                 var isSuccess = await _reservationManager.MakeReservationAsync(reservation);
                 if (isSuccess)
-                {
-                    await stepContext.Context.SendActivityAsync("Your reservation is confirmed!✔️");
-                    await stepContext.Context.SendActivityAsync($"Hope to see you soon on **{myDate.Date.DayOfWeek}({myDate.DateTime.ToString("hh:mm tt")})** 👋");
+                {   
+                    await stepContext.Context.SendActivityAsync("Your reservation is confirmed!✔️. A confirmation mail 📨 has been sent to your email address.");
+                    await stepContext.Context.SendActivityAsync($"Hope to see you soon on **{myDate.Date.DayOfWeek}({myDate.DateTime.ToString("HH:mm")})** 👋");
                     await stepContext.Context.SendActivityAsync($"*\"You don't need a silver fork to eat good food*\". 😋");
                     return EndOfTurn;
                 }
@@ -135,7 +135,7 @@ namespace Daba_Delicious.Dialogs
 
                 return await stepContext.PromptAsync("ConfirmReservation", new PromptOptions()
                 {
-                    Prompt = MessageFactory.Text($"Alright! Reservation on **{date.Date.ToString("dd-MM-yyyy")} {date.ToString("hh:mm tt")}** Is that ok?"),
+                    Prompt = MessageFactory.Text($"Alright! Reservation on **{date.Date.ToString("dd-MM-yyyy")} {date.ToString("HH:mm")}** Is that ok?"),
                     Choices = choices
                 }, cancellationToken);
             }

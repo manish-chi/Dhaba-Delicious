@@ -55,7 +55,7 @@ namespace Daba_Delicious.Utilities
 
             try
             {
-                HttpResponseMessage response = await client.GetAsync($"http://localhost:3000/api/v1/restaurants/{order.RestaurantData._id}/menu?menuItemNames={Uri.EscapeDataString(JsonConvert.SerializeObject(menuItemNames))}");
+                HttpResponseMessage response = await client.GetAsync($"{Configuration["GetMenuItemByRestaurantIdUri"]}/{order.RestaurantData._id}/menu?menuItemNames={Uri.EscapeDataString(JsonConvert.SerializeObject(menuItemNames))}");
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");

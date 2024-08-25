@@ -122,7 +122,7 @@ namespace Daba_Delicious.Cards
             nearAdapativeObj.body[0].columns[0].items[1].columns[0].items[0].text = restaurant.name;
             nearAdapativeObj.body[0].columns[0].items[0].url = restaurant.photo;
             nearAdapativeObj.body[1].columns[1].items[0].text = ratingsStars;
-            nearAdapativeObj.body[2].columns[1].items[0].text = $"{restaurant.open.ToString("hh:mm tt")}-{restaurant.close.ToString("hh:mm tt")}";
+            nearAdapativeObj.body[2].columns[1].items[0].text = $"{restaurant.open.ToString("HH:mm")}-{restaurant.close.ToString("HH:mm")}";
             nearAdapativeObj.body[3].columns[1].items[0].text = restaurant.location.address;
             nearAdapativeObj.body[0].columns[0].items[1].columns[1].items[0].url = foodCategoryUrl;
             nearAdapativeObj.body[4].selectAction.title = "submit";
@@ -141,9 +141,12 @@ namespace Daba_Delicious.Cards
         public Attachment GetDateTimeCard(RestaurantData restaurant,DateTimeSerializer dateTimeAdapativeObj)
         {
             dateTimeAdapativeObj.schema = "http://adaptivecards.io/schemas/adaptive-card.json";
-            dateTimeAdapativeObj.body[1].columns[1].items[0].min = restaurant.open.ToString("hh:mm");
-            dateTimeAdapativeObj.body[1].columns[1].items[0].max = restaurant.close.ToString("hh:mm");
-            dateTimeAdapativeObj.body[1].columns[1].items[0].errorMessage = $"{restaurant.name} is open between {restaurant.open.ToString("hh:mm tt")}-{restaurant.close.ToString("hh:mm tt")} ⚠️";
+            dateTimeAdapativeObj.body[0].columns[1].items[0].min = DateTimeCalculator.CalculateISTDate();
+            dateTimeAdapativeObj.body[0].columns[1].items[0].max = DateTimeCalculator.CalculateISTDate(25);
+            dateTimeAdapativeObj.body[0].columns[1].items[0].value = DateTimeCalculator.CalculateISTDate();
+            dateTimeAdapativeObj.body[1].columns[1].items[0].min = restaurant.open.ToString("HH:mm");
+            dateTimeAdapativeObj.body[1].columns[1].items[0].max = restaurant.close.ToString("HH:mm");
+            dateTimeAdapativeObj.body[1].columns[1].items[0].errorMessage = $"{restaurant.name} is open between {restaurant.open.ToString("HH:mm")}-{restaurant.close.ToString("HH:mm")} ⚠️";
             return new Attachment()
             {
                 Content = dateTimeAdapativeObj,
