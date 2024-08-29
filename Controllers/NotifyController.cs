@@ -28,7 +28,7 @@ namespace Dhaba_Delicious.Controllers
             _adapter = adapter;
             _conversationReferences = conversationReferences;
             _appId = configuration["MicrosoftAppId"] ?? string.Empty;
-            _orderManager = new OrderManager(new OrderService(configuration));
+            _orderManager = new OrderManager(new OrderService(configuration),configuration,_orderAccessor);
         }
 
         public async Task<IActionResult> Get()

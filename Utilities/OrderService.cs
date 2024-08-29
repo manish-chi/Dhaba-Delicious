@@ -9,6 +9,7 @@ using Dhaba_Delicious.Models;
 using System.Linq;
 using Dhaba_Delicious.Serializables.Order;
 using Dhaba_Delicious.Interfaces;
+using Dhaba_Delicious.Serializables.Menu;
 
 namespace Dhaba_Delicious.Utilities
 {
@@ -45,6 +46,29 @@ namespace Dhaba_Delicious.Utilities
             }
             catch (Exception ex) {
                 throw new Exception(ex.Message);
+            }
+        }
+
+        public async Task<Top3OrdersSerializer> Top3OrdersAsync(Order order)
+        {
+            HttpClient client = new HttpClient();
+
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync($"{_configuration["GetTop3OrdersUri"]}/{order.RestaurantData._id}");
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
+                var res = JsonConvert.DeserializeObject<Top3OrdersSerializer>(responseBody);
+                return res;
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+                return null;
             }
         }
     }

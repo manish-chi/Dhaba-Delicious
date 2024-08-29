@@ -163,7 +163,7 @@ namespace Daba_Delicious.Models
                 Actions = new List<CardAction>()
                 {
                   new CardAction() { Title = "Pay",Type = ActionTypes.OpenUrl, Value = paymentUrl },
-                  new CardAction() { Title = "Cancel",Type = ActionTypes.PostBack, Value = "cancel" },
+                  new CardAction() { Title = "Cancel",Type = ActionTypes.PostBack, Value = "cancellationText",Text = "cancellationText"},
                 }
             };
 
