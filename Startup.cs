@@ -55,7 +55,7 @@ namespace Daba_Delicious
             services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
             //var storage = new MemoryStorage();
-            var storage = new BlobsStorage(Configuration["ConnectionStrings:dataConnectionString"], "bot-state");
+            var storage = new BlobsStorage(Configuration["DataConnectionString"], "bot-state");
 
             var userState = new UserState(storage);
             services.AddSingleton(userState);
