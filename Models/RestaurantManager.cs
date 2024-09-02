@@ -67,6 +67,7 @@ namespace Daba_Delicious.Models
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
+
             }
         }
 
