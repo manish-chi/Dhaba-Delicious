@@ -13,11 +13,13 @@ namespace Dhaba_Delicious.Utilities
     public class PaymentService : IPaymentService
     {
         private IConfiguration _configuration;
+
+
         public PaymentService(IConfiguration configuration)
         {
             this._configuration = configuration;
         }
-        public async Task<string> MakePaymentAsync(dynamic obj)
+        public async Task<string> MakePaymentAsync(dynamic obj,string token)
         {
             HttpClient client = new HttpClient();
 
@@ -26,9 +28,11 @@ namespace Dhaba_Delicious.Utilities
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
 
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
             try
             {
-                HttpResponseMessage response = await client.PostAsync(_configuration["CreateCardSessionURL"], content);
+                HttpResponseMessage response = await client.PostAsync(_configuration["CreateCartSessionURL"], content);
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)

@@ -9,6 +9,7 @@ using System.Threading;
 using Microsoft.Extensions.Configuration;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Utilities;
+using Daba_Delicious.Models;
 
 namespace Dhaba_Delicious.Controllers
 {
@@ -21,14 +22,16 @@ namespace Dhaba_Delicious.Controllers
         private readonly OrderManager _orderManager;
         private readonly ConcurrentDictionary<string, ConversationReference> _conversationReferences;
         private IStatePropertyAccessor<Order> _orderAccessor;
+        private readonly IStatePropertyAccessor<User> _userAccessor;
 
         public NotifyController(IBotFrameworkHttpAdapter adapter,UserState userState, IConfiguration configuration, ConcurrentDictionary<string, ConversationReference> conversationReferences)
         {
-            _orderAccessor = userState.CreateProperty<Order>("Order");
-            _adapter = adapter;
-            _conversationReferences = conversationReferences;
-            _appId = configuration["MicrosoftAppId"] ?? string.Empty;
-            _orderManager = new OrderManager(new OrderService(configuration),configuration,_orderAccessor);
+            this._orderAccessor = userState.CreateProperty<Order>("Order");
+            this._userAccessor = userState.CreateProperty<User>("User");
+            this._adapter = adapter;
+            this._conversationReferences = conversationReferences;
+            this._appId = configuration["MicrosoftAppId"] ?? string.Empty;
+            this._orderManager = new OrderManager(new OrderService(configuration),configuration,_orderAccessor,_userAccessor);
         }
 
         public async Task<IActionResult> Get()
@@ -51,7 +54,7 @@ namespace Dhaba_Delicious.Controllers
         {
             var order = await _orderAccessor.GetAsync(turnContext, () => new Order(), cancellationToken);
 
-            var reply = await _orderManager.CreateOrderAsync(order);
+            var reply = await _orderManager.CreateOrderAsync(turnContext,cancellationToken,order);
             
             await turnContext.SendActivityAsync(reply);
         }

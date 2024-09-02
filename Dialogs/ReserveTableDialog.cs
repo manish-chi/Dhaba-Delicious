@@ -45,10 +45,9 @@ namespace Daba_Delicious.Dialogs
             this._userAccessor = userAccessor;
             this._configuration = configuration;
             this._dDRecognizer = dDRecognizer;
-            this._restaurantManager = new RestaurantManager(configuration,new RestaurantClient(configuration),restaurantDataAccessor,null,new CardManager());
-            this._reservationManager = new ReservationManager(new ReservationClient(configuration));
+            this._restaurantManager = new RestaurantManager(configuration,new RestaurantService(configuration),userAccessor,restaurantDataAccessor,null,new CardManager());
+            this._reservationManager = new ReservationManager(new ReservationService(configuration),_userAccessor);
             
-            this._userAccessor = userAccessor;
             this._reservationAccessor = reservationAccessor;
 
             var steps = new WaterfallStep[]
@@ -78,13 +77,18 @@ namespace Daba_Delicious.Dialogs
 
                 var myDate = DateTimeOffset.Parse(reservation.Time);
 
-                var isSuccess = await _reservationManager.MakeReservationAsync(reservation);
+                var isSuccess = await _reservationManager.MakeReservationAsync(stepContext.Context,cancellationToken,reservation);
                 if (isSuccess)
                 {   
                     await stepContext.Context.SendActivityAsync("Your reservation is confirmed!✔️. A confirmation mail 📨 has been sent to your email address.");
                     await stepContext.Context.SendActivityAsync($"Hope to see you soon on **{myDate.Date.DayOfWeek}({myDate.DateTime.ToString("HH:mm")})** 👋");
                     await stepContext.Context.SendActivityAsync($"*\"You don't need a silver fork to eat good food*\". 😋");
-                    return EndOfTurn;
+
+                    var reply = new CardManager().GetMenuSuggestionReply(stepContext.Context.Activity.CreateReply());
+
+                    await stepContext.Context.SendActivityAsync(reply, cancellationToken);
+
+                    return await stepContext.EndDialogAsync(null, cancellationToken);
                 }
                 else {
                     await stepContext.Context.SendActivityAsync("Oops! ☹️ something went wrong! please try again!");
@@ -189,6 +193,8 @@ namespace Daba_Delicious.Dialogs
             {
                 UserId  = user.Id,
             }, cancellationToken);
+
+
             await stepContext.Context.SendActivityAsync(reply);
 
             return EndOfTurn;

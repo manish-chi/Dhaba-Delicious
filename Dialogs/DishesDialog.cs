@@ -21,6 +21,7 @@ using RestroQnABot.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -29,25 +30,30 @@ namespace Dhaba_Delicious.Dialogs
 {
     public class DishesDialog : CancelAndHelpDialog
     {
+        private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Order> _orderAccessor;
+        private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
+        private IStatePropertyAccessor<Cart> _cartAccessor;
+
+
         private DDRecognizer _dDRecognizer;
         private CardManager _cardManager;
         private OrderManager _orderManager;
-        private IStatePropertyAccessor<Cart> _cartAccessor;
         private RestaurantManager _restaurantManager;
-        private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
         private UserState _userState;
 
-        public DishesDialog(IConfiguration configuration,IStatePropertyAccessor<Cart> cartAccessor,IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,UserState userstate,DDRecognizer dDRecognizer) : base(nameof(DishesDialog))
+        public DishesDialog(IConfiguration configuration,IStatePropertyAccessor<Order> orderAccessor,IStatePropertyAccessor<Cart> cartAccessor,IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,IStatePropertyAccessor<User> userAccessor,UserState userstate,DDRecognizer dDRecognizer) : base(nameof(DishesDialog))
         {
-
-            _orderAccessor = userstate.CreateProperty<Order>("Order");
+            _userAccessor = userAccessor;
+            _orderAccessor = orderAccessor;
             _dDRecognizer = dDRecognizer;
             _cartAccessor = cartAccessor;
+            _restaurantDataAccessor  = restaurantDataAccessor; 
             _userState = userstate;
             _cardManager = new CardManager();
-            _orderManager = new OrderManager(new OrderService(configuration), configuration, _orderAccessor);
-            this._restaurantManager = new RestaurantManager(configuration, new RestaurantClient(configuration), _restaurantDataAccessor, _orderAccessor, new CardManager());
+           
+            _orderManager = new OrderManager(new OrderService(configuration), configuration, _orderAccessor,_userAccessor);
+            _restaurantManager = new RestaurantManager(configuration, new RestaurantService(configuration),_userAccessor, _restaurantDataAccessor, _orderAccessor, new CardManager());
 
             var steps = new WaterfallStep[]
             {
@@ -62,6 +68,8 @@ namespace Dhaba_Delicious.Dialogs
 
             Dialogs.Add(new ConfirmPrompt("AskingAgainForMenuDialog"));
         }
+
+      
 
         private async Task<DialogTurnResult> CheckOutAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
@@ -206,19 +214,21 @@ namespace Dhaba_Delicious.Dialogs
                         notAvailableFoodItemString += item + ",";
                     }
 
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant.*Here are our popular dishes*"), cancellationToken);
-
                     //show top 3 orders
                     var top3Orders =  await _orderManager.Top3OrdersAsync(stepContext.Context, cancellationToken, order);
 
                     if(top3Orders.Attachments.Count  > 0)
                     {
+                        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant.*Here are our popular dishes*"), cancellationToken);
+
                         await stepContext.Context.SendActivityAsync(top3Orders, cancellationToken);
                         return EndOfTurn;
                     }
                     else
                     {
-                        await stepContext.EndDialogAsync(null, cancellationToken);
+                        await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant"),cancellationToken);
+         
+                        return await stepContext.EndDialogAsync(null, cancellationToken);
                     }
                 }
 

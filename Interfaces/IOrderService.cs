@@ -7,8 +7,8 @@ namespace Dhaba_Delicious.Interfaces
 {
     public interface IOrderService
     {
-        public Task<Result> CreateOrderAsync(Order order);
+        public Task<Result> CreateOrderAsync(Order order,string token);
 
-        public Task<Top3OrdersSerializer> Top3OrdersAsync(Order order);
+        public Task<Top3OrdersSerializer> Top3OrdersAsync(Order order,string token);
     }
 }

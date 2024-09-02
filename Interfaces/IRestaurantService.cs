@@ -13,8 +13,8 @@ namespace Daba_Delicious.Interfaces
         public IConfiguration Configuration { get; set; }
         public Task<RestaurantSerializer> GetNearbyRestaurantsAsync(User user);
 
-        public Task<NodeTemplateSeralizer> GetCardAsync(string uri);
+        public Task<NodeTemplateSeralizer> GetCardAsync(string uri,string token);
 
-        public Task<MenuItemByNameSerializer> GetMenuItemsByName(Order order,List<string> menuItemNames);
+        public Task<MenuItemByNameSerializer> GetMenuItemsByName(Order order,List<string> menuItemNames,string token);
     }
 }

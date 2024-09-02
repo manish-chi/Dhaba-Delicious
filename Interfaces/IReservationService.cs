@@ -5,6 +5,6 @@ namespace Daba_Delicious.Interfaces
 {
     public interface IReservationService
     {
-        public Task<bool> CreateReservationAsync(Reservation reservation);
+        public Task<bool> CreateReservationAsync(Reservation reservation, string token);
     }
 }

@@ -15,11 +15,11 @@ using System.Collections.Generic;
 
 namespace Daba_Delicious.Utilities
 {
-    public class RestaurantClient : IRestaurantService
+    public class RestaurantService : IRestaurantService
     {
         public IConfiguration Configuration { get; set; }
 
-        public RestaurantClient(IConfiguration configuration)
+        public RestaurantService(IConfiguration configuration)
         {
             this.Configuration = configuration;
         }
@@ -29,6 +29,7 @@ namespace Daba_Delicious.Utilities
             HttpClient client = new HttpClient();
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {user.Token}");
 
             try
             {
@@ -47,11 +48,12 @@ namespace Daba_Delicious.Utilities
             }
         }
 
-        public async Task<MenuItemByNameSerializer> GetMenuItemsByName(Order order,List<string> menuItemNames)
+        public async Task<MenuItemByNameSerializer> GetMenuItemsByName(Order order,List<string> menuItemNames,string token)
         {
             HttpClient client = new HttpClient();
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
             try
             {
@@ -71,11 +73,12 @@ namespace Daba_Delicious.Utilities
         }
 
 
-        public async Task<NodeTemplateSeralizer> GetCardAsync(String uri)
+        public async Task<NodeTemplateSeralizer> GetCardAsync(String uri,string token)
         {
             HttpClient client = new HttpClient();
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
             try
             {

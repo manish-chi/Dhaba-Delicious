@@ -11,6 +11,7 @@ namespace Daba_Delicious.Models
         public DateTime Time { set; get; }
         public DateTime Date { get; set; }
         public Location Location { get; set; }
+        public string Token { get; set; }
     }
 
     public class Location

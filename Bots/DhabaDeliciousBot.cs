@@ -25,15 +25,18 @@ namespace Daba_Delicious.Bots
     {
         protected Dialog dialog;
 
-        protected UserState userState;
-        protected ConversationState conversationState;
+        protected UserState _userState;
+        protected ConversationState _conversationState;
         private DDRecognizer _dDRecognizer;
+
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
         private IStatePropertyAccessor<List<RestaurantData>> _listOfRestaurantsAccessor;
         private IStatePropertyAccessor<Cart> _cartAccessor;
         private IStatePropertyAccessor<Order> _orderAccessor;
+
         private readonly ConcurrentDictionary<string, ConversationReference> _conversationReferences;
+
 
         private DialogSet _dialogs { get; set; }
 
@@ -42,15 +45,15 @@ namespace Daba_Delicious.Bots
         
         public DhabaDeliciousBot(IConfiguration configuration,DDRecognizer ddrecognizer,UserState userState,ConversationState conversationState, ConcurrentDictionary<string, ConversationReference> conversationReferences)
         {
-            this.userState = userState;
-            this.conversationState = conversationState;
-
-            _userAccessor = userState.CreateProperty<User>("User");
-            _reservationAccessor = userState.CreateProperty<Reservation>("Reservation");
+            this._userState = userState;
+            this._conversationState = conversationState;
+     
+            this._userAccessor = userState.CreateProperty<User>("User");
+            this._reservationAccessor = userState.CreateProperty<Reservation>("Reservation");
             this._listOfRestaurantsAccessor = userState.CreateProperty<List<RestaurantData>>("RestaurantData");
             this._orderAccessor = userState.CreateProperty<Order>("Order");
             this._cartAccessor = userState.CreateProperty<Cart>("Cart");
-            _conversationReferences = conversationReferences;
+            this._conversationReferences = conversationReferences;
 
             var dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
 
@@ -60,7 +63,7 @@ namespace Daba_Delicious.Bots
             _dialogs.Add(new OffersDialog(configuration, userState));
             _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_listOfRestaurantsAccessor,_dDRecognizer));
             _dialogs.Add(new MenuDialog(configuration, userState,_listOfRestaurantsAccessor,_userAccessor,_orderAccessor));
-            _dialogs.Add(new DishesDialog(configuration,_cartAccessor,_listOfRestaurantsAccessor,userState,ddrecognizer));
+            _dialogs.Add(new DishesDialog(configuration,_orderAccessor,_cartAccessor,_listOfRestaurantsAccessor,_userAccessor,userState,ddrecognizer));
 
         }
 
@@ -78,7 +81,7 @@ namespace Daba_Delicious.Bots
                 AddConversationReference(turnContext.Activity as Activity);
 
                 await turnContext.SendActivitiesAsync(
-            new Activity[] {
+                new Activity[] {
                 new Activity { Type = ActivityTypes.Typing },
                 new Activity { Type = "delay", Value= 1000 },
             });
@@ -102,8 +105,8 @@ namespace Daba_Delicious.Bots
                await this.OnMembersAddedAsync(turnContext.Activity.MembersAdded, turnContext, cancellationToken);
             }
 
-            await userState.SaveChangesAsync(turnContext, true, cancellationToken);
-            await conversationState.SaveChangesAsync(turnContext, true, cancellationToken);
+            await _userState.SaveChangesAsync(turnContext, true, cancellationToken);
+            await _conversationState.SaveChangesAsync(turnContext, true, cancellationToken);
         }
         private void AddConversationReference(Activity activity)
         {
@@ -135,7 +138,8 @@ namespace Daba_Delicious.Bots
                     //Id = JObject.Parse(data.ToString()).GetValue("userId").ToString(),
                     Email = JObject.Parse(data.ToString()).GetValue("email").ToString(),
                     Name = JObject.Parse(data.ToString()).GetValue("name").ToString(),
-                    Id = JObject.Parse(data.ToString()).GetValue("userId").ToString()
+                    Id = JObject.Parse(data.ToString()).GetValue("userId").ToString(),
+                    Token = JObject.Parse(data.ToString()).GetValue("token").ToString(),
                     //PhoneNumber = JObject.Parse(data.ToString()).GetValue("phoneNumber").ToString(),
                     //Location = JsonConvert.DeserializeObject<Location>(JObject.Parse(data.ToString()).GetValue("location").ToString()),
                 };

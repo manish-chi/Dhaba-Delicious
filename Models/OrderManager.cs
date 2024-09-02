@@ -1,5 +1,6 @@
 ﻿using Daba_Delicious.Cards;
 using Daba_Delicious.Interfaces;
+using Daba_Delicious.Models;
 using Daba_Delicious.Utilities;
 using Dhaba_Delicious.Interfaces;
 using Dhaba_Delicious.Serializables.Menu;
@@ -16,23 +17,27 @@ namespace Dhaba_Delicious.Models
 {
     public class OrderManager
     {
-        public IOrderService _orderService;
+        private IStatePropertyAccessor<User> _userAccessor;
+        private IOrderService _orderService;
         private IStatePropertyAccessor<Order> _orderAccessor;
         private IConfiguration _configuration;
         private IRestaurantService _restaurantService;
         private CardManager _cardManager;
-        public OrderManager(IOrderService orderService,IConfiguration configuration,IStatePropertyAccessor<Order> orderAccessor)
+        public OrderManager(IOrderService orderService,IConfiguration configuration,IStatePropertyAccessor<Order> orderAccessor,IStatePropertyAccessor<User> userAccessor)
         {
+            this._userAccessor = userAccessor;
             _orderService = orderService;
             _orderAccessor = orderAccessor;
             _cardManager = new CardManager();
             _configuration = configuration;
-            _restaurantService = new RestaurantClient(configuration);
+            _restaurantService = new RestaurantService(configuration);
         }
 
-        public async Task<IMessageActivity> CreateOrderAsync(Order order)
+        public async Task<IMessageActivity> CreateOrderAsync(ITurnContext context,CancellationToken cancellationToken,Order order)
         {
-            var createdOrder = await _orderService.CreateOrderAsync(order);
+            var user = await _userAccessor.GetAsync(context, () => new User(), cancellationToken);
+
+            var createdOrder = await _orderService.CreateOrderAsync(order,user.Token);
 
             if (createdOrder != null)
             {
@@ -46,7 +51,9 @@ namespace Dhaba_Delicious.Models
 
         public async Task<IMessageActivity> Top3OrdersAsync(ITurnContext context,CancellationToken cancellationToken, Order order)
         {
-            var top3Orders = await _orderService.Top3OrdersAsync(order);
+            var user = await _userAccessor.GetAsync(context, () => new User(), cancellationToken);
+
+            var top3Orders = await _orderService.Top3OrdersAsync(order,user.Token);
 
             var cardArray = new List<Microsoft.Bot.Schema.Attachment>();
 
@@ -60,7 +67,7 @@ namespace Dhaba_Delicious.Models
                 }
             }
 
-            var result = await _restaurantService.GetCardAsync(_configuration["GetMenuCardUri"]);
+            var result = await _restaurantService.GetCardAsync(_configuration["GetMenuCardUri"],user.Token);
 
             foreach (var items in top3Orders.data)
             {

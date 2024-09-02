@@ -10,6 +10,7 @@ using System.Linq;
 using Dhaba_Delicious.Serializables.Order;
 using Dhaba_Delicious.Interfaces;
 using Dhaba_Delicious.Serializables.Menu;
+using Microsoft.Bot.Builder.Dialogs.Choices;
 
 namespace Dhaba_Delicious.Utilities
 {
@@ -20,7 +21,7 @@ namespace Dhaba_Delicious.Utilities
         {
             _configuration = configuration;
         }
-        public async Task<Result> CreateOrderAsync(Order order)
+        public async Task<Result> CreateOrderAsync(Order order,string token)
         {
             HttpClient client = new HttpClient();
 
@@ -29,6 +30,7 @@ namespace Dhaba_Delicious.Utilities
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
             try
             {
@@ -49,11 +51,12 @@ namespace Dhaba_Delicious.Utilities
             }
         }
 
-        public async Task<Top3OrdersSerializer> Top3OrdersAsync(Order order)
+        public async Task<Top3OrdersSerializer> Top3OrdersAsync(Order order,string token)
         {
             HttpClient client = new HttpClient();
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
             try
             {

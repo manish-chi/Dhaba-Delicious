@@ -25,18 +25,34 @@ namespace Daba_Delicious.Models
         private PaymentManager _paymentManager;
         private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
         private IStatePropertyAccessor<Order> _orderAccessor;
-        public RestaurantManager(IConfiguration configuration,IRestaurantService restaurantService, IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,IStatePropertyAccessor<Order> orderAccessor,CardManager cardManager)
+        private IStatePropertyAccessor<User> _userAccessor;
+        private IConfiguration _configuration;
+        public Dictionary<string, string> promptsAccToRestaurant;
+        public RestaurantManager(IConfiguration configuration,IRestaurantService restaurantService,IStatePropertyAccessor<User> _userAccessor, IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,IStatePropertyAccessor<Order> orderAccessor,CardManager cardManager)
         {
+            this._configuration = configuration;
             this._restaurantService = restaurantService;
             this._cardManager = cardManager;
-            this._paymentManager = new PaymentManager(new PaymentService(configuration));
+            this._paymentManager = new PaymentManager(new PaymentService(configuration), _userAccessor);
             this._restaurantDataAccessor = restaurantDataAccessor;
             this._orderAccessor = orderAccessor;
+            this._userAccessor = _userAccessor;
+            this.promptsAccToRestaurant = new Dictionary<string, string>();
+            this.initializePrompts();
+        }
+
+        private void initializePrompts()
+        {
+            promptsAccToRestaurant.Add("veg", "Panner Butter Masala");
+            promptsAccToRestaurant.Add("non-veg", "Mutton Biryani");
+            promptsAccToRestaurant.Add("tiffins", "Masala Dosa");
         }
 
         public async Task<IMessageActivity> GetDateTimeCard(ITurnContext context,Reservation reservation,CancellationToken cancellationToken)
         {
-            var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetDateTimeAdaptiveCardUri"]);
+            var user = await _userAccessor.GetAsync(context, () => new User(), cancellationToken);
+
+            var result = await _restaurantService.GetCardAsync(_configuration["GetDateTimeAdaptiveCardUri"],user.Token);
 
             var restaurants = await _restaurantDataAccessor.GetAsync(context, () => new List<RestaurantData>(), cancellationToken);
 
@@ -56,6 +72,7 @@ namespace Daba_Delicious.Models
 
         public async Task<IMessageActivity> GetNearestRestaurantsAsync(ITurnContext context, User user, CancellationToken cancellationToken)
         {
+            
             var restaurants = await _restaurantService.GetNearbyRestaurantsAsync(user);
 
             var listofRestaurants = restaurants.data.ToList();
@@ -64,7 +81,7 @@ namespace Daba_Delicious.Models
 
             var cardArray = new List<Attachment>();
             
-            var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetNearRestaurantAdaptiveCardUri"]);
+            var result = await _restaurantService.GetCardAsync(_configuration["GetNearRestaurantAdaptiveCardUri"],user.Token);
            
 
             foreach (var restaurant in restaurants.data)
@@ -103,13 +120,15 @@ namespace Daba_Delicious.Models
 
         public async Task<IMessageActivity> GetMenuItemsCardAsync(ITurnContext context,CancellationToken cancellationToken,List<string> menuItemNames)
         {
+            var user = await _userAccessor.GetAsync(context, () => new User(), cancellationToken);
+
             var reply = context.Activity.CreateReply();
 
             var cardArray = new List<Microsoft.Bot.Schema.Attachment>();
 
             var order = await _orderAccessor.GetAsync(context, () => new Order(), cancellationToken);
 
-            var menuItems = await _restaurantService.GetMenuItemsByName(order, menuItemNames);
+            var menuItems = await _restaurantService.GetMenuItemsByName(order, menuItemNames,user.Token);
 
             foreach(var items in menuItems.data)
             {
@@ -126,7 +145,7 @@ namespace Daba_Delicious.Models
                 return MessageFactory.Text($"Sorry,We don't serve at the moment. 🙂.You can please try other dishes from our menu..");
             }
 
-            var result = await _restaurantService.GetCardAsync(_restaurantService.Configuration["GetMenuCardUri"]);
+            var result = await _restaurantService.GetCardAsync(_configuration["GetMenuCardUri"],user.Token);
 
             foreach (var items in menuItems.data) { 
 
@@ -148,9 +167,9 @@ namespace Daba_Delicious.Models
             return reply;
         }
 
-        public async Task<IMessageActivity> GetReceiptCardAsync(ITurnContext context, CancellationToken cancellationToken, Order order)
-        {
-            var paymentUrl = await _paymentManager.MakePaymentAsync(order);
+        public async Task<IMessageActivity> GetReceiptCardAsync(ITurnContext context, CancellationToken cancellationToken, Order order) { 
+        
+            var paymentUrl = await _paymentManager.MakePaymentAsync(context,cancellationToken,order);
 
             var attachment = _cardManager.createRecieptCard(order,paymentUrl);
 

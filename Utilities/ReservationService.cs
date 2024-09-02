@@ -9,15 +9,15 @@ using Microsoft.Extensions.Configuration;
 
 namespace Daba_Delicious.Utilities
 {
-    public class ReservationClient : IReservationService
+    public class ReservationService : IReservationService
     {
         private IConfiguration _configuration;
 
-        public ReservationClient(IConfiguration configuration)
+        public ReservationService(IConfiguration configuration)
         {
-            this._configuration = configuration;    
+            this._configuration = configuration;
         }
-        public async Task<bool> CreateReservationAsync(Reservation reservation)
+        public async Task<bool> CreateReservationAsync(Reservation reservation,string token)
         {
             HttpClient client = new HttpClient();
 
@@ -27,6 +27,8 @@ namespace Daba_Delicious.Utilities
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
             try
             {

@@ -35,7 +35,7 @@ namespace Daba_Delicious.Dialogs
             this._orderAccessor = orderAccessor;
             this._listOfRestaurantsAccessor = listOfRestaurantsAccessor;
 
-            this._restaurantManager = new RestaurantManager(configuration,new RestaurantClient(configuration),_listOfRestaurantsAccessor,orderAccessor, new CardManager());
+            this._restaurantManager = new RestaurantManager(configuration,new RestaurantService(configuration),_userAccessor,_listOfRestaurantsAccessor,orderAccessor, new CardManager());
 
             var steps = new WaterfallStep[]
            {
@@ -111,7 +111,11 @@ namespace Daba_Delicious.Dialogs
 
             await stepContext.Context.SendActivityAsync("If you have any questions or need suggestions, I’m here to help!");
 
-            await stepContext.Context.SendActivityAsync("We also provide few of our signature dishes for online delivery, Please type *I want to order panner butter masala*");
+            string promptRestaurantType = String.Empty;
+            
+            _restaurantManager.promptsAccToRestaurant.TryGetValue(restaurant.type,out promptRestaurantType);
+           
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text($"We also provide few of our signature dishes for online delivery, Please type something like **I want to order {promptRestaurantType}**"));
 
             return await stepContext.EndDialogAsync(null,cancellationToken);
         }

@@ -4,6 +4,8 @@ using Microsoft.Extensions.Configuration;
 using RestroQnABot.Dialogs;
 using System.Threading.Tasks;
 using System.Threading;
+using Daba_Delicious.Cards;
+using Microsoft.AspNetCore.Http;
 
 namespace Daba_Delicious.Dialogs
 {
@@ -27,7 +29,12 @@ namespace Daba_Delicious.Dialogs
 
             await outerDc.Context.SendActivityAsync("Use code 🎁'**BOTOFFERS30%**', to avail 30% discount on bookings!");
 
-            return EndOfTurn;
+            var reply = new CardManager().GetMenuSuggestionReply(outerDc.Context.Activity.CreateReply());
+
+            await outerDc.Context.SendActivityAsync(reply, cancellationToken);
+
+            return await outerDc.EndDialogAsync(null, cancellationToken);
+
         }
     }
 }
