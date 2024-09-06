@@ -19,6 +19,8 @@ namespace Dhaba_Delicious.Models
 
         public RestaurantData RestaurantData { get; set; }
 
+        public List<string> NotAvailableItems { get; set; }
+
         public Cart cart;
 
         public User User { get; set; }
@@ -27,6 +29,7 @@ namespace Dhaba_Delicious.Models
         {
             retrivedItemsPerRequest = new List<MenuItem>();
             finalizedItems = new List<dynamic>();
+            NotAvailableItems = new List<string>();
             cart = new Cart();
         }
 

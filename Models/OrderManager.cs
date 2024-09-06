@@ -41,12 +41,23 @@ namespace Dhaba_Delicious.Models
 
             if (createdOrder != null)
             {
+                await this.ClearOrderItemsAsync(context, cancellationToken, order);
+
                 return MessageFactory.Text($"Your Order({createdOrder._id}) has been placed successfully!🍳🍽️🍛🍗.");
+
+                
             }
             else
             {
                 return MessageFactory.Text($"There was a problem placing your order ⚠️.Please try again later..");
             }
+        }
+
+        public async Task ClearOrderItemsAsync(ITurnContext context,CancellationToken cancellationToken,Order order)
+        {
+            order = new Order();
+
+            await _orderAccessor.SetAsync(context, order, cancellationToken);
         }
 
         public async Task<IMessageActivity> Top3OrdersAsync(ITurnContext context,CancellationToken cancellationToken, Order order)

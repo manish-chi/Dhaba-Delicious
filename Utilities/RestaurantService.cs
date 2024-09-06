@@ -57,11 +57,45 @@ namespace Daba_Delicious.Utilities
 
             try
             {
-                HttpResponseMessage response = await client.GetAsync($"{Configuration["GetMenuItemByRestaurantIdUri"]}/{order.RestaurantData._id}/menu?menuItemNames={Uri.EscapeDataString(JsonConvert.SerializeObject(menuItemNames))}");
+                string url = String.Empty;
+                if (order.RestaurantData != null)
+                {
+                    url = $"{Configuration["GetMenuItemByRestaurantIdUri"]}/{order.RestaurantData._id}/menu?menuItemNames={Uri.EscapeDataString(JsonConvert.SerializeObject(menuItemNames))}";
+                }
+                else
+                {
+                    url = $"{Configuration["GetMenuItemsUri"]}?menuItemNames={Uri.EscapeDataString(JsonConvert.SerializeObject(menuItemNames))}";
+                }
+
+                HttpResponseMessage response = await client.GetAsync(url);
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
                 var res = JsonConvert.DeserializeObject<MenuItemByNameSerializer>(responseBody);
+                return res;
+            }
+            catch (HttpRequestException e)
+            {
+                Console.WriteLine("\nException Caught!");
+                Console.WriteLine("Message :{0} ", e.Message);
+                return null;
+            }
+        }
+
+        public async Task<RestaurantSerializer> GetRestaurantDataByMenuItems(List<string> menuItems,string token)
+        {
+            HttpClient client = new HttpClient();
+
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+            try
+            {
+                HttpResponseMessage response = await client.GetAsync($"{Configuration["GetRestaurantDataByMenuItemsUri"]}?menuItemNames={Uri.EscapeDataString(JsonConvert.SerializeObject(menuItems))}");
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
+                responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
+                var res = JsonConvert.DeserializeObject<RestaurantSerializer>(responseBody);
                 return res;
             }
             catch (HttpRequestException e)

@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,9 +27,10 @@ namespace Daba_Delicious.Models
         private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
         private IStatePropertyAccessor<Order> _orderAccessor;
         private IStatePropertyAccessor<User> _userAccessor;
+        private IStatePropertyAccessor<DDCognitiveModel> _recognizerAccessor;
         private IConfiguration _configuration;
         public Dictionary<string, string> promptsAccToRestaurant;
-        public RestaurantManager(IConfiguration configuration,IRestaurantService restaurantService,IStatePropertyAccessor<User> _userAccessor, IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,IStatePropertyAccessor<Order> orderAccessor,CardManager cardManager)
+        public RestaurantManager(IConfiguration configuration,IRestaurantService restaurantService,IStatePropertyAccessor<User> _userAccessor, IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,IStatePropertyAccessor<DDCognitiveModel> recognizerAccessor,IStatePropertyAccessor<Order> orderAccessor,CardManager cardManager)
         {
             this._configuration = configuration;
             this._restaurantService = restaurantService;
@@ -37,6 +39,7 @@ namespace Daba_Delicious.Models
             this._restaurantDataAccessor = restaurantDataAccessor;
             this._orderAccessor = orderAccessor;
             this._userAccessor = _userAccessor;
+            this._recognizerAccessor = recognizerAccessor;
             this.promptsAccToRestaurant = new Dictionary<string, string>();
             this.initializePrompts();
         }
@@ -71,19 +74,55 @@ namespace Daba_Delicious.Models
             }
         }
 
+        public async Task<IMessageActivity> GetNearestRestoByMenuNames(ITurnContext context,CancellationToken cancellationToken,List<string> menuItemNames)
+        {
+            var user = await _userAccessor.GetAsync(context, () => new User(), cancellationToken);
+
+            var nearestRestaurants = await _restaurantService.GetRestaurantDataByMenuItems(menuItemNames, user.Token);
+
+            if(nearestRestaurants.data.Length == 0)
+            {
+                return MessageFactory.Text("There are no restaurants that currently serve this items..⚠️");
+            }
+
+            return await this.CreateNearestRestaurantActivity(context, cancellationToken, user, nearestRestaurants);
+
+        }
+
+        public async Task SetOrderItemsAsync(ITurnContext context,CancellationToken cancellationToken,List<string> menuItemNames)
+        {
+            var user = await _userAccessor.GetAsync(context, () => new User(), cancellationToken);
+
+            var order = await _orderAccessor.GetAsync(context, () => new Order(), cancellationToken);
+
+            var menuItems = await _restaurantService.GetMenuItemsByName(order, menuItemNames, user.Token);
+
+            foreach (var item in menuItems.data[0])
+            {
+                order.retrivedItemsPerRequest.Add(item);
+            }
+
+            await _orderAccessor.SetAsync(context, order, cancellationToken);
+        }
+
         public async Task<IMessageActivity> GetNearestRestaurantsAsync(ITurnContext context, User user, CancellationToken cancellationToken)
         {
             
             var restaurants = await _restaurantService.GetNearbyRestaurantsAsync(user);
 
+            return await this.CreateNearestRestaurantActivity(context, cancellationToken, user, restaurants);
+        }
+
+        private async Task<IMessageActivity> CreateNearestRestaurantActivity(ITurnContext context,CancellationToken cancellationToken,User user,RestaurantSerializer restaurants)
+        {
             var listofRestaurants = restaurants.data.ToList();
 
             if (restaurants.data != null) await _restaurantDataAccessor.SetAsync(context, listofRestaurants, cancellationToken);
 
             var cardArray = new List<Attachment>();
-            
-            var result = await _restaurantService.GetCardAsync(_configuration["GetNearRestaurantAdaptiveCardUri"],user.Token);
-           
+
+            var result = await _restaurantService.GetCardAsync(_configuration["GetNearRestaurantAdaptiveCardUri"], user.Token);
+
 
             foreach (var restaurant in restaurants.data)
             {
@@ -92,31 +131,7 @@ namespace Daba_Delicious.Models
                 cardArray.Add(_cardManager.GetNearestRestCard(restaurant, nearbycard));
             }
 
-
             return MessageFactory.Carousel(cardArray);
-
-            //var attachments = new List<Attachment>();
-
-            //foreach(var restaurant in restaurants.data)
-            //{
-            //    var foodCategoryUrl = restaurant.type == "veg" ? "https://dhabadeliciousstorage.blob.core.windows.net/icons/icons8-veg-48.png" : "https://dhabadeliciousstorage.blob.core.windows.net/icons/icons8-non-veg-48.png";
-
-            //    var card = new HeroCard()
-            //    {
-            //        Title = restaurant.name,
-            //        Subtitle = $"{restaurant.open} Hours and Closes at {restaurant.close} Hours.⌚",
-            //        Buttons = [new CardAction() { Image = foodCategoryUrl, Title = "select", Type = "imBack", Text = restaurant._id }],
-            //        Images = [new CardImage() { Url = restaurant.photo}]
-            //    };
-
-            //    attachments.Add(card.ToAttachment());
-            //}
-
-            //var reply = Activity.CreateMessageActivity();
-            //reply.AttachmentLayout = AttachmentLayoutTypes.Carousel;
-            //reply.Attachments = attachments;
-          
-            //return reply;
         }
 
         public async Task<IMessageActivity> GetMenuItemsCardAsync(ITurnContext context,CancellationToken cancellationToken,List<string> menuItemNames)
@@ -135,7 +150,13 @@ namespace Daba_Delicious.Models
             {
                 foreach(var item in items)
                 {
-                    order.retrivedItemsPerRequest.Add(item);
+                    if (menuItemNames.Any(x => item.name.Contains(x, StringComparison.InvariantCultureIgnoreCase))){
+                        order.retrivedItemsPerRequest.Add(item);
+                    }
+                    else
+                    {
+                        order.NotAvailableItems.Add(menuItemNames.Find(x => !item.name.Contains(x, StringComparison.InvariantCultureIgnoreCase)));
+                    }
                 }
             }
 
@@ -155,7 +176,6 @@ namespace Daba_Delicious.Models
                     var menuCardSkeleton = JsonConvert.DeserializeObject<MenuCardSerializer>(result.data.ToString());
 
                     cardArray.Add(_cardManager.GetMenuCard(item, menuCardSkeleton));
-
                 }
             }
 

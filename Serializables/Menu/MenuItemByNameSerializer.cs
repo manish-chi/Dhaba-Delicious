@@ -18,7 +18,7 @@ namespace Dhaba_Delicious.Serializables.Menu
         public string type { get; set; }
         public string image { get; set; }
         public string category { get; set; }
-        public string[] restaurants { get; set; }
+        public RestaurantData[] restaurants { get; set; }
         public string description { get; set; }
         public int price_in_INR { get; set; }
         public int __v { get; set; }

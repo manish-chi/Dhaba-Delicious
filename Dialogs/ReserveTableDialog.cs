@@ -45,7 +45,7 @@ namespace Daba_Delicious.Dialogs
             this._userAccessor = userAccessor;
             this._configuration = configuration;
             this._dDRecognizer = dDRecognizer;
-            this._restaurantManager = new RestaurantManager(configuration,new RestaurantService(configuration),userAccessor,restaurantDataAccessor,null,new CardManager());
+            this._restaurantManager = new RestaurantManager(configuration,new RestaurantService(configuration),userAccessor,restaurantDataAccessor,null,null,new CardManager());
             this._reservationManager = new ReservationManager(new ReservationService(configuration),_userAccessor);
             
             this._reservationAccessor = reservationAccessor;
@@ -141,7 +141,7 @@ namespace Daba_Delicious.Dialogs
                 {
                     Prompt = MessageFactory.Text($"Alright! Reservation on **{date.Date.ToString("dd-MM-yyyy")} {date.ToString("HH:mm")}** Is that ok?"),
                     Choices = choices
-                }, cancellationToken);
+                }, cancellationToken); 
             }
         }
 
