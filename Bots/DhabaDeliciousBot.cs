@@ -7,6 +7,7 @@ using Daba_Delicious.Recognizer;
 using Dhaba_Delicious.Dialogs;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
+using Dhaba_Delicious.Utilities;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
@@ -28,12 +29,15 @@ namespace Daba_Delicious.Bots
         protected UserState _userState;
         protected ConversationState _conversationState;
         private DDRecognizer _dDRecognizer;
+        private CardManager _cardManager;
 
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
         private IStatePropertyAccessor<List<RestaurantData>> _listOfRestaurantsAccessor;
         private IStatePropertyAccessor<Cart> _cartAccessor;
         private IStatePropertyAccessor<Order> _orderAccessor;
+
+       
 
         private readonly ConcurrentDictionary<string, ConversationReference> _conversationReferences;
 
@@ -54,16 +58,18 @@ namespace Daba_Delicious.Bots
             this._orderAccessor = userState.CreateProperty<Order>("Order");
             this._cartAccessor = userState.CreateProperty<Cart>("Cart");
             this._conversationReferences = conversationReferences;
+            this._cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
 
             var dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
 
             _dialogs = new DialogSet(dialogStateAccessor);
             _dialogs.Add(new DDLuisDialog(configuration,userState,ddrecognizer));
             _dialogs.Add(new ContactDialog(configuration, userState));
-            _dialogs.Add(new OffersDialog(configuration, userState));
+            _dialogs.Add(new OffersDialog(configuration, _userAccessor));
             _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_listOfRestaurantsAccessor,_dDRecognizer));
             _dialogs.Add(new MenuDialog(configuration, userState,_listOfRestaurantsAccessor,_userAccessor,_orderAccessor));
             _dialogs.Add(new DishesDialog(configuration,_orderAccessor,_cartAccessor,_listOfRestaurantsAccessor,_userAccessor,userState,ddrecognizer));
+            _dialogs.Add(new ChangeRestaurantDialog(_orderAccessor));
 
         }
 
@@ -156,7 +162,7 @@ namespace Daba_Delicious.Bots
 
             await context.SendActivityAsync(reply, cancellationToken);
 
-            reply = new CardManager().GetMenuSuggestionReply(reply.CreateReply()) as Activity;
+            reply = await this._cardManager.GetMenuSuggestionReplyAsync(context.Activity.CreateReply(),user.Token) as Activity;
             // await context.SendActivityAsync(reply, cancellationToken);
 
             await context.SendActivityAsync(reply, cancellationToken);

@@ -25,7 +25,8 @@ namespace Daba_Delicious.Models
             contact,
             offers,
             dishes,
-            None
+            None,
+            change
         }
 
         public string Text { get; set; }
@@ -103,7 +104,7 @@ namespace Daba_Delicious.Models
 
         public CluEntity[] GetLocation() => Entities.Where(e => e.Category == "location").ToArray();
 
-        public CluEntity[] GetDrink() => Entities.Where(e => e.Category == "drink").ToArray();
+        public CluEntity[] GetDrink() => Entities.Where(e => e.Category == "beverages").ToArray();
 
         public CluEntity[] GetFood() => Entities.Where(e => e.Category == "food").ToArray();
 

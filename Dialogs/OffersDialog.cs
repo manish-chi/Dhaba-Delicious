@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.Threading;
 using Daba_Delicious.Cards;
 using Microsoft.AspNetCore.Http;
+using Daba_Delicious.Models;
+using Dhaba_Delicious.Utilities;
+using Dhaba_Delicious.Models;
 
 namespace Daba_Delicious.Dialogs
 {
@@ -13,9 +16,13 @@ namespace Daba_Delicious.Dialogs
     {
         private IConfiguration _configuration;
         private UserState _userState;
-        public OffersDialog(IConfiguration configuration, UserState userState) : base(nameof(OffersDialog))
+        private CardManager _cardManager;
+        private IStatePropertyAccessor<User> _userAccessor;
+
+        public OffersDialog(IConfiguration configuration,IStatePropertyAccessor<User> userAccessor) : base(nameof(OffersDialog))
         {
-            this._userState = userState;
+            this._userAccessor = userAccessor;
+            this._cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
             this._configuration = configuration;
         }
 
@@ -29,7 +36,9 @@ namespace Daba_Delicious.Dialogs
 
             await outerDc.Context.SendActivityAsync("Use code 🎁'**BOTOFFERS30%**', to avail 30% discount on bookings!");
 
-            var reply = new CardManager().GetMenuSuggestionReply(outerDc.Context.Activity.CreateReply());
+            var user = await _userAccessor.GetAsync(outerDc.Context, () => new User(), cancellationToken);
+
+            var reply = await this._cardManager.GetMenuSuggestionReplyAsync(outerDc.Context.Activity, user.Token);
 
             await outerDc.Context.SendActivityAsync(reply, cancellationToken);
 

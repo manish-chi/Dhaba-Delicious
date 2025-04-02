@@ -4,6 +4,7 @@ using Daba_Delicious.Models;
 using Daba_Delicious.Utilities;
 using Dhaba_Delicious.Interfaces;
 using Dhaba_Delicious.Serializables.Menu;
+using Dhaba_Delicious.Utilities;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Bot.Schema;
@@ -28,7 +29,7 @@ namespace Dhaba_Delicious.Models
             this._userAccessor = userAccessor;
             _orderService = orderService;
             _orderAccessor = orderAccessor;
-            _cardManager = new CardManager();
+            _cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
             _configuration = configuration;
             _restaurantService = new RestaurantService(configuration);
         }
@@ -43,9 +44,10 @@ namespace Dhaba_Delicious.Models
             {
                 await this.ClearOrderItemsAsync(context, cancellationToken, order);
 
-                return MessageFactory.Text($"Your Order({createdOrder._id}) has been placed successfully!🍳🍽️🍛🍗.");
+                await context.SendActivityAsync(MessageFactory.Text($"Your Order with ID : **{createdOrder._id}** has been placed successfully!🍳🍽️🍛🍗 and confirmation mail has been sent.😊😃"),cancellationToken);
 
-                
+                return await this._cardManager.GetMenuSuggestionReplyAsync(context.Activity, user.Token);
+
             }
             else
             {
@@ -75,7 +77,7 @@ namespace Dhaba_Delicious.Models
                 foreach (var items in top3Orders.data)
                 {
                    order.retrivedItemsPerRequest.Add(items.item);
-                }
+                }              
             }
 
             var result = await _restaurantService.GetCardAsync(_configuration["GetMenuCardUri"],user.Token);

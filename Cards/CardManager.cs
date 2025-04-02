@@ -15,25 +15,43 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
 namespace Daba_Delicious.Cards
 {
     public class CardManager
     {
-        public IMessageActivity GetMenuSuggestionReply(Activity reply)
+        public CardManager()
         {
+            
+        }
+
+        private ChatBotManager _botManager;
+        public CardManager(ChatBotManager botManager)
+        {
+            this._botManager = botManager;
+        }
+
+        public async Task<IMessageActivity> GetMenuSuggestionReplyAsync(Activity reply,string token)
+        {
+            var mainNavigationOptions = await _botManager.getMainNavigationOptions(token);
+
+            var actions = new List<CardAction>();
+
+            foreach(var option in mainNavigationOptions.data){
+                actions.Add(new CardAction()
+                {
+                    Title = option.name,
+                    Image =option.image,
+                    Type = ActionTypes.ImBack,
+                    Value = option.value
+                });
+            }
 
             reply.SuggestedActions = new SuggestedActions()
             {
-                Actions = new List<CardAction>()
-        {
-            new CardAction() { Title = "Reserve Table",Image = "https://dhabadeliciousstorage.blob.core.windows.net/icons/bell_3530694.png",Type = ActionTypes.ImBack, Value = "Reserve Table" },
-            new CardAction() { Title = "Menu",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/food_icon.png", Type = ActionTypes.ImBack, Value = "Menu"},
-            new CardAction() { Title = "Exciting Offers",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/offer_7261257.png", Type = ActionTypes.ImBack, Value = "exciting offers"},
-            new CardAction() { Title = "Locate Us",Image= "https://dhabadeliciousstorage.blob.core.windows.net/icons/locate_us.png", Type = ActionTypes.ImBack, Value = "Locate"},
-            new CardAction() { Title = "Contact",Image="https://dhabadeliciousstorage.blob.core.windows.net/icons/contact_2967892.png", Type = ActionTypes.ImBack, Value = "Contact" },
-        },
+                Actions = actions,
             };
 
             return reply;

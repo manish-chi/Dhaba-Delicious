@@ -54,6 +54,9 @@ namespace Daba_Delicious.Dialogs
                 case DDCognitiveModel.Intent.locate:
                     await outerDc.BeginDialogAsync(nameof(LocateDialog), null, cancellationToken);
                     break;
+                case DDCognitiveModel.Intent.change:
+                    await outerDc.BeginDialogAsync(nameof(ChangeRestaurantDialog), null, cancellationToken);
+                    break;
                 case DDCognitiveModel.Intent.contact:
                    // await outerDc.BeginDialogAsync(nameof(ContactDialog), cancellationToken);
                     break;

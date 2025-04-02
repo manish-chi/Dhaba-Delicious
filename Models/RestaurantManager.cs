@@ -80,7 +80,12 @@ namespace Daba_Delicious.Models
 
             var nearestRestaurants = await _restaurantService.GetRestaurantDataByMenuItems(menuItemNames, user.Token);
 
-            if(nearestRestaurants.data.Length == 0)
+            await _orderAccessor.SetAsync(context, new Order()
+            {
+                User = new User() { Id = user.Id },
+            }, cancellationToken);
+
+            if (nearestRestaurants.data.Length == 0)
             {
                 return MessageFactory.Text("There are no restaurants that currently serve this items..⚠️");
             }
@@ -180,6 +185,8 @@ namespace Daba_Delicious.Models
             }
 
             await _orderAccessor.SetAsync(context, order, cancellationToken);
+
+            reply.Text = "Awesome! 😃 Go ahead and choose the dish 🍛 that excites you the most!";
 
             reply.Attachments = cardArray;
 

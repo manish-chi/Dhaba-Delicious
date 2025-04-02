@@ -26,6 +26,7 @@ namespace Dhaba_Delicious.Models
         public async Task<IMessageActivity> NearestRestaurantProviderAsync(ITurnContext context,CancellationToken cancellationToken)
         {
             var user = await _userAccessor.GetAsync(context, () => new User(), cancellationToken);
+
             var reply = await _restaurantManager.GetNearestRestaurantsAsync(context, user, cancellationToken);
 
             await _orderAccessor.SetAsync(context, new Order()

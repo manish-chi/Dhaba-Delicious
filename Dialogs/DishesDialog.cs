@@ -55,7 +55,7 @@ namespace Dhaba_Delicious.Dialogs
             _recognizerAccessor = userstate.CreateProperty<DDCognitiveModel>(nameof(DDCognitiveModel));
             _restaurantDataAccessor  = restaurantDataAccessor; 
             _userState = userstate;
-            _cardManager = new CardManager();
+            _cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
             _orderManager = new OrderManager(new OrderService(configuration), configuration, _orderAccessor,_userAccessor);
             _restaurantManager = new RestaurantManager(configuration, new RestaurantService(configuration),_userAccessor, _restaurantDataAccessor,_recognizerAccessor, _orderAccessor, new CardManager());
             _nearestRestaurantProvider = new NearestRestaurantProvider(_userAccessor, _orderAccessor, _restaurantDataAccessor, _restaurantManager);
@@ -81,12 +81,14 @@ namespace Dhaba_Delicious.Dialogs
         {
             var reply = stepContext.Context.Activity.Text;
 
+            var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(), cancellationToken);
+
             //cancellation of order...
             if (!reply.Contains("pay"))
             {
                 await stepContext.Context.SendActivityAsync(MessageFactory.Text("I suggest trying these options..."), cancellationToken);
 
-                var menuReply = new CardManager().GetMenuSuggestionReply(stepContext.Context.Activity.CreateReply()) as Activity;
+                var menuReply = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity.CreateReply(),user.Token) as Activity;
 
                 await stepContext.Context.SendActivityAsync(menuReply, cancellationToken);
 
@@ -98,8 +100,6 @@ namespace Dhaba_Delicious.Dialogs
 
                 return EndOfTurn;
             }
-
-
         }
 
         private async Task<DialogTurnResult> CheckIfCheckOutOrMoreItemsAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -191,6 +191,8 @@ namespace Dhaba_Delicious.Dialogs
 
             var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
 
+            var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(), cancellationToken);
+
             string notAvailableFoodItemString = string.Empty;
 
             foreach (var item in order.NotAvailableItems)
@@ -206,11 +208,17 @@ namespace Dhaba_Delicious.Dialogs
                 await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant.*Here are our popular dishes*"), cancellationToken);
 
                 await stepContext.Context.SendActivityAsync(top3Orders, cancellationToken);
+
                 return EndOfTurn;
             }
             else
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant"), cancellationToken);
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant 😔."), cancellationToken);
+
+                //show menu..
+                var reply = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity,user.Token);
+
+                await stepContext.Context.SendActivityAsync(reply, cancellationToken);
 
                 return await stepContext.EndDialogAsync(null, cancellationToken);
             }
@@ -252,7 +260,7 @@ namespace Dhaba_Delicious.Dialogs
 
             if (order.RestaurantData == null)
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("Sure,I can help!! 👍 Please select a restaurant below.."), cancellationToken);
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text("I'd be happy to assist! 👍 Pick a restaurant from the selection below."), cancellationToken);
 
                 var reply = await _restaurantManager.GetNearestRestoByMenuNames(stepContext.Context, cancellationToken, result.FoodItemNames);
 
@@ -278,6 +286,7 @@ namespace Dhaba_Delicious.Dialogs
         private async Task<DialogTurnResult> NoMenuItemsFoundAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
+            var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(), cancellationToken);
 
             await stepContext.Context.SendActivityAsync(MessageFactory.Text("Sorry, we don't provide this item at the moment."), cancellationToken);
 
@@ -287,7 +296,7 @@ namespace Dhaba_Delicious.Dialogs
             }
             else
             {
-                var menuSuggestion = _cardManager.GetMenuSuggestionReply(stepContext.Context.Activity);
+                var menuSuggestion = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity, user.Token);
 
                 await stepContext.Context.SendActivityAsync(menuSuggestion, cancellationToken);
 

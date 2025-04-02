@@ -4,8 +4,10 @@ using Daba_Delicious.Cards;
 using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
 using Daba_Delicious.Utilities;
+using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
 using Dhaba_Delicious.Serializables.Menu;
+using Dhaba_Delicious.Utilities;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
@@ -36,6 +38,7 @@ namespace Daba_Delicious.Dialogs
         private RestaurantManager _restaurantManager;
         private ReservationManager _reservationManager;
         private DDRecognizer _dDRecognizer;
+        private CardManager _cardManager;
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
         
@@ -45,6 +48,7 @@ namespace Daba_Delicious.Dialogs
             this._userAccessor = userAccessor;
             this._configuration = configuration;
             this._dDRecognizer = dDRecognizer;
+            this._cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
             this._restaurantManager = new RestaurantManager(configuration,new RestaurantService(configuration),userAccessor,restaurantDataAccessor,null,null,new CardManager());
             this._reservationManager = new ReservationManager(new ReservationService(configuration),_userAccessor);
             
@@ -67,6 +71,8 @@ namespace Daba_Delicious.Dialogs
 
         private async Task<DialogTurnResult> SaveBookingDetailsAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
+            var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(),cancellationToken);
+
             var date = DateTime.Now;
 
             var choice = (FoundChoice)stepContext.Result;
@@ -84,7 +90,7 @@ namespace Daba_Delicious.Dialogs
                     await stepContext.Context.SendActivityAsync($"Hope to see you soon on **{myDate.Date.DayOfWeek}({myDate.DateTime.ToString("HH:mm")})** 👋");
                     await stepContext.Context.SendActivityAsync($"*\"You don't need a silver fork to eat good food*\". 😋");
 
-                    var reply = new CardManager().GetMenuSuggestionReply(stepContext.Context.Activity.CreateReply());
+                    var reply = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity, user.Token);
 
                     await stepContext.Context.SendActivityAsync(reply, cancellationToken);
 
@@ -108,7 +114,7 @@ namespace Daba_Delicious.Dialogs
             {
                 var user = await _userAccessor.GetAsync(stepContext.Context, () =>  new User(), cancellationToken);
 
-                var reply = new CardManager().GetMenuSuggestionReply(stepContext.Context.Activity.CreateReply());
+                var reply = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity, user.Token);
 
                 await stepContext.Context.SendActivityAsync(reply, cancellationToken);
 
