@@ -14,7 +14,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Builder.Dialogs.Choices;
-using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;

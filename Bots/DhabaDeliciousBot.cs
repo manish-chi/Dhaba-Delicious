@@ -7,7 +7,6 @@ using Daba_Delicious.Recognizer;
 using Dhaba_Delicious.Dialogs;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
-using Dhaba_Delicious.Serializables.Order;
 using Dhaba_Delicious.Utilities;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
@@ -34,12 +33,15 @@ namespace Daba_Delicious.Bots
         private ResponseManager _responseManager;
         private DDRecognizer _dDRecognizer = null;
         private CardManager _cardManager;
+        private AuthenticationManager _authenticationManager;
 
         private IStatePropertyAccessor<User> _userAccessor;
         private IStatePropertyAccessor<Reservation> _reservationAccessor;
         private IStatePropertyAccessor<List<RestaurantData>> _listOfRestaurantsAccessor;
         private IStatePropertyAccessor<Cart> _cartAccessor;
         private IStatePropertyAccessor<Order> _orderAccessor;
+
+
 
        
 
@@ -63,7 +65,8 @@ namespace Daba_Delicious.Bots
             this._orderAccessor = userState.CreateProperty<Order>("Order");
             this._cartAccessor = userState.CreateProperty<Cart>("Cart");
             this._conversationReferences = conversationReferences;
-           // this._cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
+            this._authenticationManager = new AuthenticationManager(new AuthService(configuration));
+            // this._cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
 
             var dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
 
@@ -160,17 +163,24 @@ namespace Daba_Delicious.Bots
         {
             if (context.Activity.Name == "webchat/join")
             {
-                var data = JObject.Parse(context.Activity.Value.ToString()).GetValue("data");
+                //var data = JObject.Parse(context.Activity.Value.ToString()).GetValue("data");
+
+                //var user = new User()
+                //{
+                //    //Id = JObject.Parse(data.ToString()).GetValue("userId").ToString(),
+                //    Email = JObject.Parse(data.ToString()).GetValue("email").ToString(),
+                //    Name = JObject.Parse(data.ToString()).GetValue("name").ToString(),
+                //    Id = JObject.Parse(data.ToString()).GetValue("userId").ToString(),
+                //    Token = JObject.Parse(data.ToString()).GetValue("token").ToString(),
+                //    //PhoneNumber = JObject.Parse(data.ToString()).GetValue("phoneNumber").ToString(),
+                //    //Location = JsonConvert.DeserializeObject<Location>(JObject.Parse(data.ToString()).GetValue("location").ToString()),
+                //};
+
+                var token = await _authenticationManager.AuthenticateAdmin();
 
                 var user = new User()
                 {
-                    //Id = JObject.Parse(data.ToString()).GetValue("userId").ToString(),
-                    Email = JObject.Parse(data.ToString()).GetValue("email").ToString(),
-                    Name = JObject.Parse(data.ToString()).GetValue("name").ToString(),
-                    Id = JObject.Parse(data.ToString()).GetValue("userId").ToString(),
-                    Token = JObject.Parse(data.ToString()).GetValue("token").ToString(),
-                    //PhoneNumber = JObject.Parse(data.ToString()).GetValue("phoneNumber").ToString(),
-                    //Location = JsonConvert.DeserializeObject<Location>(JObject.Parse(data.ToString()).GetValue("location").ToString()),
+                    Token = token
                 };
 
                  await _userAccessor.SetAsync(context, user, cancellationToken);
