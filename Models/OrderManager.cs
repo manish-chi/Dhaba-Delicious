@@ -24,12 +24,13 @@ namespace Dhaba_Delicious.Models
         private IConfiguration _configuration;
         private IRestaurantService _restaurantService;
         private CardManager _cardManager;
+
         public OrderManager(IOrderService orderService,IConfiguration configuration,IStatePropertyAccessor<Order> orderAccessor,IStatePropertyAccessor<User> userAccessor)
         {
             this._userAccessor = userAccessor;
             _orderService = orderService;
             _orderAccessor = orderAccessor;
-            _cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
+            _cardManager = new CardManager();
             _configuration = configuration;
             _restaurantService = new RestaurantService(configuration);
         }
@@ -44,10 +45,10 @@ namespace Dhaba_Delicious.Models
             {
                 await this.ClearOrderItemsAsync(context, cancellationToken, order);
 
-                await context.SendActivityAsync(MessageFactory.Text($"Your Order with ID : **{createdOrder._id}** has been placed successfully!🍳🍽️🍛🍗 and confirmation mail has been sent.😊😃"),cancellationToken);
+               await context.SendActivityAsync(MessageFactory.Text($"Your Order with ID : **{createdOrder._id}** has been placed successfully!🍳🍽️🍛🍗 and confirmation mail has been sent.😊😃"),cancellationToken);
 
-                return await this._cardManager.GetMenuSuggestionReplyAsync(context.Activity, user.Token);
 
+                return MessageFactory.Text($"There was a problem placing your order ⚠️.Please try again later..");
             }
             else
             {
@@ -86,7 +87,7 @@ namespace Dhaba_Delicious.Models
             {
                var menuCardSkeleton = JsonConvert.DeserializeObject<MenuCardSerializer>(result.data.ToString());
 
-               cardArray.Add(_cardManager.GetMenuCard(items.item, menuCardSkeleton));
+              // cardArray.Add(_cardManager.GetMenuCard(items.item, menuCardSkeleton));
             }
 
             await _orderAccessor.SetAsync(context, order, cancellationToken);

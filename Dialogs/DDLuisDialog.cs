@@ -2,6 +2,8 @@
 using Daba_Delicious.Models;
 using Daba_Delicious.Recognizer;
 using Dhaba_Delicious.Dialogs;
+using Dhaba_Delicious.Interfaces;
+using Dhaba_Delicious.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
@@ -16,59 +18,55 @@ namespace Daba_Delicious.Dialogs
     {
         private IConfiguration _configuration;
         private UserState _userState;
-        private DDRecognizer _dDRecognizer;
-       
-        public DDLuisDialog(IConfiguration configuration, UserState userState, DDRecognizer dDRecognizer) : base(nameof(DDLuisDialog))
-        {
-            this._dDRecognizer = dDRecognizer;
+        private ResponseManager _responseManager;
+        private IStatePropertyAccessor<User> _userAccessor;
+
+        public DDLuisDialog(IConfiguration configuration,ResponseManager responseManager, UserState userState){
             this._configuration = configuration;
             this._userState = userState;
+            this._responseManager = responseManager;
+            this._userAccessor = userState.CreateProperty<User>("User");
         }
         public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext outerDc, object options = null, CancellationToken cancellationToken = default)
         {
-            if (!_dDRecognizer.IsConfigured)
-            {
-                await outerDc.Context.SendActivityAsync(
-                    MessageFactory.Text("NOTE: CLU is not configured. To enable all capabilities, add 'CluProjectName', 'CluDeploymentName', 'CluAPIKey' and 'CluAPIHostName' to the appsettings.json file.", inputHint: InputHints.IgnoringInput), cancellationToken);
 
-                return await outerDc.EndDialogAsync(cancellationToken);
-            }
+            //var user = await _userAccessor.GetAsync(outerDc.Context, () => new User(), cancellationToken);
 
-            // Call CLU and gather any potential (Note the   TurnContext has the response to the prompt.)
-            var cluResult = await _dDRecognizer.RecognizeAsync<DDCognitiveModel>(outerDc.Context, cancellationToken);
+            //var recognizedIntentFromLLM = await _responseManager.GetIntentAsync(outerDc.Context.Activity.Text,user.Token);
 
-            switch(cluResult.GetTopIntent().intent)
-            {
-                case DDCognitiveModel.Intent.reservation:
-                    await outerDc.BeginDialogAsync(nameof(ReserveTableDialog),null, cancellationToken);
-                    break;
-                case DDCognitiveModel.Intent.menu:
-                    await outerDc.BeginDialogAsync(nameof(MenuDialog), null, cancellationToken);
-                    break;
-                case DDCognitiveModel.Intent.dishes:
-                    await outerDc.BeginDialogAsync(nameof(DishesDialog), null, cancellationToken);
-                    break;
-                case DDCognitiveModel.Intent.offers:
-                    await outerDc.BeginDialogAsync(nameof(OffersDialog), null, cancellationToken);
-                    break;
-                case DDCognitiveModel.Intent.locate:
-                    await outerDc.BeginDialogAsync(nameof(LocateDialog), null, cancellationToken);
-                    break;
-                case DDCognitiveModel.Intent.change:
-                    await outerDc.BeginDialogAsync(nameof(ChangeRestaurantDialog), null, cancellationToken);
-                    break;
-                case DDCognitiveModel.Intent.contact:
-                   // await outerDc.BeginDialogAsync(nameof(ContactDialog), cancellationToken);
-                    break;
-          
-                default:
-                    // Catch all for unhandled intents
-                    var didntUnderstandMessageText = $"Sorry, I didn't get that. Please try asking in a different way (intent was {cluResult.GetTopIntent().intent})";
-                    var didntUnderstandMessage = MessageFactory.Text(didntUnderstandMessageText, didntUnderstandMessageText, InputHints.IgnoringInput);
-                    await outerDc.Context.SendActivityAsync(didntUnderstandMessage, cancellationToken);
-                    break;
+            //switch(recognizedIntentFromLLM.intent)
+            //{
+            //    case "reserveTable":
+            //        await outerDc.BeginDialogAsync(nameof(ReserveTableDialog),null, cancellationToken);
+            //        break;
+            //    case "addItems":
+            //        await outerDc.BeginDialogAsync(nameof(AddItemsDialog), null, cancellationToken);
+            //        break;
+            //    case "orderFood":
+            //        await outerDc.BeginDialogAsync(nameof(OrderFoodDialog),recognizedIntentFromLLM, cancellationToken);
+            //        break;
+            //    case "offers":
+            //        await outerDc.BeginDialogAsync(nameof(OffersDialog), null, cancellationToken);
+            //        break;
+            //    case "locate":
+            //        await outerDc.BeginDialogAsync(nameof(LocateDialog), null, cancellationToken);
+            //        break;
+            //    //case "change":
+            //    //    await outerDc.BeginDialogAsync(nameof(), null, cancellationToken);
+            //    //    break;
+            //    case "viewCart":
+            //        await outerDc.BeginDialogAsync(nameof(ViewCartDialog), cancellationToken);
+            //        break;
+            //    case "proceedToPay":
+            //        await outerDc.BeginDialogAsync(nameof(ProceedToPayDialog), cancellationToken);
+            //        break;
+            //    default:
+            //        // Catch all for unhandled intents
+            //        var reply  = await _responseManager.GetDefaultResponseAsync(outerDc.Context, outerDc.Context.Activity.Text, user.Token);
+            //        await outerDc.Context.SendActivitiesAsync(reply.ToArray(), cancellationToken);
+            //        break;
 
-            }
+            //}
 
             return EndOfTurn;
         }

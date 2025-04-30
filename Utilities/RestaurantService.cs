@@ -107,7 +107,7 @@ namespace Daba_Delicious.Utilities
         }
 
 
-        public async Task<NodeTemplateSeralizer> GetCardAsync(String uri,string token)
+        public async Task<NodeTemplateSerializer> GetCardAsync(String uri,string token)
         {
             HttpClient client = new HttpClient();
 
@@ -120,7 +120,7 @@ namespace Daba_Delicious.Utilities
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
-                dynamic result = JsonConvert.DeserializeObject<NodeTemplateSeralizer>(responseBody);
+                dynamic result = JsonConvert.DeserializeObject<NodeTemplateSerializer>(responseBody);
                 return result;
             }
             catch (HttpRequestException e)

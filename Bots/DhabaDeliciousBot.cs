@@ -7,10 +7,13 @@ using Daba_Delicious.Recognizer;
 using Dhaba_Delicious.Dialogs;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
+using Dhaba_Delicious.Serializables.Order;
 using Dhaba_Delicious.Utilities;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
+using Microsoft.Bot.Schema.SharePoint;
+using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -28,7 +31,8 @@ namespace Daba_Delicious.Bots
 
         protected UserState _userState;
         protected ConversationState _conversationState;
-        private DDRecognizer _dDRecognizer;
+        private ResponseManager _responseManager;
+        private DDRecognizer _dDRecognizer = null;
         private CardManager _cardManager;
 
         private IStatePropertyAccessor<User> _userAccessor;
@@ -47,10 +51,11 @@ namespace Daba_Delicious.Bots
         protected IConfiguration configuration;
 
         
-        public DhabaDeliciousBot(IConfiguration configuration,DDRecognizer ddrecognizer,UserState userState,ConversationState conversationState, ConcurrentDictionary<string, ConversationReference> conversationReferences)
+        public DhabaDeliciousBot(IConfiguration configuration,UserState userState,ConversationState conversationState, ConcurrentDictionary<string, ConversationReference> conversationReferences)
         {
             this._userState = userState;
             this._conversationState = conversationState;
+            this._responseManager = new ResponseManager(configuration,new CardManager(), new ResponseFromLLMService(configuration));
      
             this._userAccessor = userState.CreateProperty<User>("User");
             this._reservationAccessor = userState.CreateProperty<Reservation>("Reservation");
@@ -58,18 +63,18 @@ namespace Daba_Delicious.Bots
             this._orderAccessor = userState.CreateProperty<Order>("Order");
             this._cartAccessor = userState.CreateProperty<Cart>("Cart");
             this._conversationReferences = conversationReferences;
-            this._cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
+           // this._cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
 
             var dialogStateAccessor = conversationState.CreateProperty<DialogState>(nameof(DialogState));
 
             _dialogs = new DialogSet(dialogStateAccessor);
-            _dialogs.Add(new DDLuisDialog(configuration,userState,ddrecognizer));
-            _dialogs.Add(new ContactDialog(configuration, userState));
-            _dialogs.Add(new OffersDialog(configuration, _userAccessor));
-            _dialogs.Add(new ReserveTableDialog(configuration,userState,_userAccessor,_reservationAccessor,_listOfRestaurantsAccessor,_dDRecognizer));
-            _dialogs.Add(new MenuDialog(configuration, userState,_listOfRestaurantsAccessor,_userAccessor,_orderAccessor));
-            _dialogs.Add(new DishesDialog(configuration,_orderAccessor,_cartAccessor,_listOfRestaurantsAccessor,_userAccessor,userState,ddrecognizer));
-            _dialogs.Add(new ChangeRestaurantDialog(_orderAccessor));
+            //_dialogs.Add(new DDLuisDialog(configuration, _responseManager, userState));
+            //_dialogs.Add(new ContactDialog(configuration, userState));
+            ////_dialogs.Add(new OffersDialog(configuration, _userAccessor));
+            //_dialogs.Add(new ReserveTableDialog(configuration, userState, _userAccessor, _reservationAccessor, _listOfRestaurantsAccessor, _dDRecognizer));
+            //_dialogs.Add(new AddItemsDialog(configuration, userState, _listOfRestaurantsAccessor, _userAccessor, _orderAccessor));
+            //_dialogs.Add(new OrderFoodDialog(_responseManager, _userAccessor));
+            //_dialogs.Add(new ChangeRestaurantDialog(_orderAccessor));
 
         }
 
@@ -94,8 +99,12 @@ namespace Daba_Delicious.Bots
 
                 if (dc.ActiveDialog == null)
                 {
+                    var user = await _userAccessor.GetAsync(dc.Context, () => new User(), cancellationToken);
+                    // await dc.BeginDialogAsync(nameof(DDLuisDialog), cancellationToken);
 
-                    await dc.BeginDialogAsync(nameof(DDLuisDialog), cancellationToken);
+                    var reply = await _responseManager.GetDefaultResponseAsync(dc.Context, dc.Context.Activity.Text, user.Token);
+
+                    await dc.Context.SendActivitiesAsync(reply.ToArray(), cancellationToken);
                 }
                 else
                 {
@@ -122,15 +131,29 @@ namespace Daba_Delicious.Bots
         protected async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext turnContext, CancellationToken cancellationToken)
         {
             
-            foreach (var member in membersAdded)
-            {
-                if (member.Id != turnContext.Activity.Recipient.Id)
-                {
-                    //var user = await _userAccessor.GetAsync(turnContext, () => new User(), cancellationToken);
+            //foreach (var member in membersAdded)
+            //{
+            //    if (member.Id != turnContext.Activity.Recipient.Id)
+            //    {
+            //        var user = new User()
+            //        {
+            //            //Id = JObject.Parse(data.ToString()).GetValue("userId").ToString(),
+            //            Email = "chitre.ma@gmail.com",
+            //            Name = "Manish Chitre",
+            //            Id = "66cc240c2b0664128bf63752",
+            //            Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY2Y2MyNDBjMmIwNjY0MTI4YmY2Mzc1MiIsImlhdCI6MTc0NDYzNzA1NSwiZXhwIjoxNzUyNDEzMDU1fQ.L1v-WaiVttSNFtPTGxhldS80EOQ1Ur4HZ2V9cZ9h0ZM",
+            //            //PhoneNumber = JObject.Parse(data.ToString()).GetValue("phoneNumber").ToString(),
+            //            //Location = JsonConvert.DeserializeObject<Location>(JObject.Parse(data.ToString()).GetValue("location").ToString()),
+            //        };
 
-                  
-                }
-            }
+            //        await _userAccessor.SetAsync(turnContext, user, cancellationToken);
+
+            //        var reply = await _responseManager.GetWelcomeReponseAsync(user.Token,turnContext);
+
+            //        await turnContext.SendActivityAsync(reply, cancellationToken);
+
+            //    }
+            //}
         }
 
         protected async Task OnEventActivity(ITurnContext context, CancellationToken cancellationToken)
@@ -150,20 +173,15 @@ namespace Daba_Delicious.Bots
                     //Location = JsonConvert.DeserializeObject<Location>(JObject.Parse(data.ToString()).GetValue("location").ToString()),
                 };
 
-                await _userAccessor.SetAsync(context, user, cancellationToken);
+                 await _userAccessor.SetAsync(context, user, cancellationToken);
 
-                await this.SendWelcomeMessageAsync(context, user, cancellationToken);
+                 await this.SendWelcomeMessageAsync(context, user, cancellationToken);
             }
         }
 
         public async Task SendWelcomeMessageAsync(ITurnContext context, User user, CancellationToken cancellationToken)
         {
-            var reply = MessageFactory.Text($"Hi, {user.Name}!😊.Welcome to Dhaba Delicious!Be ready to enjoy a unique dining experience that will keep you smiling even when you get home. 😊");
-
-            await context.SendActivityAsync(reply, cancellationToken);
-
-            reply = await this._cardManager.GetMenuSuggestionReplyAsync(context.Activity.CreateReply(),user.Token) as Activity;
-            // await context.SendActivityAsync(reply, cancellationToken);
+            var reply = await this._responseManager.GetWelcomeReponseAsync(user.Token,context);
 
             await context.SendActivityAsync(reply, cancellationToken);
         }

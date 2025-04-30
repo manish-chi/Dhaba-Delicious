@@ -37,7 +37,7 @@ namespace Dhaba_Delicious.Utilities
                 string responseBody = await response.Content.ReadAsStringAsync();
                 if (response.IsSuccessStatusCode)
                 {
-                    var cardSession = JsonConvert.DeserializeObject<NodeTemplateSeralizer>(responseBody);
+                    var cardSession = JsonConvert.DeserializeObject<NodeTemplateSerializer>(responseBody);
                     return cardSession.data.ToString();
                 }
                 else

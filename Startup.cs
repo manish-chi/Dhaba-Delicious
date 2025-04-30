@@ -65,8 +65,8 @@ namespace Daba_Delicious
 
             services.AddSingleton<SpellCheckMiddleware>();
 
-            services.AddSingleton<DDRecognizer>();
-
+           // services.AddSingleton<DDRecognizer>();
+           
             // Create a global hashset for our ConversationReferences
             services.AddSingleton<ConcurrentDictionary<string, ConversationReference>>();
 

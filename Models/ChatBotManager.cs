@@ -6,19 +6,19 @@ using System.Threading.Tasks;
 
 namespace Dhaba_Delicious.Models
 {
-    public class ChatBotManager
-    {
-        private ChatBotNavigationService _navigationOptionsService;
-        public ChatBotManager(ChatBotNavigationService navigationService)
-        {
-            this._navigationOptionsService = navigationService;
-        }
+    //public class ChatBotManager
+    //{
+    //    private ChatBotNavigationService _navigationOptionsService;
+    //    public ChatBotManager(ChatBotNavigationService navigationService)
+    //    {
+    //        this._navigationOptionsService = navigationService;
+    //    }
 
-        public async Task<MainMenuNavigationSerializer> getMainNavigationOptions(string token)
-        { 
-            var navigationOptions = await _navigationOptionsService.GetNavigationMenuAsync(token);
+    //    public async Task<MainMenuNavigationSerializer> getMainNavigationOptions(string token)
+    //    { 
+    //        var navigationOptions = await _navigationOptionsService.GetNavigationMenuAsync(token);
 
-            return navigationOptions;
-        }
-    }
+    //        return navigationOptions;
+    //    }
+    //}
 }

@@ -18,7 +18,7 @@ using Dhaba_Delicious.Dialogs;
 
 namespace Daba_Delicious.Dialogs
 {
-    public class MenuDialog : CancelAndHelpDialog
+    public class AddItemsDialog : CancelAndHelpDialog
     {
         private IConfiguration _configuration;
         private UserState _userState;
@@ -28,7 +28,7 @@ namespace Daba_Delicious.Dialogs
         private IStatePropertyAccessor<List<RestaurantData>> _listOfRestaurantsAccessor;
         private NearestRestaurantProvider _nearestRestaurantProvider;
 
-        public MenuDialog(IConfiguration configuration, UserState userState, IStatePropertyAccessor<List<RestaurantData>> listOfRestaurantsAccessor,IStatePropertyAccessor<User> userAccessor,IStatePropertyAccessor<Order> orderAccessor) : base(nameof(MenuDialog))
+        public AddItemsDialog(IConfiguration configuration, UserState userState, IStatePropertyAccessor<List<RestaurantData>> listOfRestaurantsAccessor,IStatePropertyAccessor<User> userAccessor,IStatePropertyAccessor<Order> orderAccessor) : base(nameof(AddItemsDialog))
         {
             this._userState = userState;
             this._configuration = configuration;

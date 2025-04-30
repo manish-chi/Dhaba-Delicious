@@ -180,7 +180,7 @@ namespace Daba_Delicious.Models
                 {
                     var menuCardSkeleton = JsonConvert.DeserializeObject<MenuCardSerializer>(result.data.ToString());
 
-                    cardArray.Add(_cardManager.GetMenuCard(item, menuCardSkeleton));
+                    //cardArray.Add(_cardManager.GetMenuCard(item, menuCardSkeleton));
                 }
             }
 

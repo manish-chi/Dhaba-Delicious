@@ -19,28 +19,28 @@ namespace Dhaba_Delicious.Utilities
             this._configuration = configuration;
         }
 
-        public async Task<MainMenuNavigationSerializer> GetNavigationMenuAsync(string token)
-        {
-            HttpClient client = new HttpClient();
+        //public async Task<MainMenuNavigationSerializer> GetNavigationMenuAsync(string token)
+        //{
+        //    HttpClient client = new HttpClient();
 
-            client.DefaultRequestHeaders.Add("Accept", "application/json");
-            client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        //    client.DefaultRequestHeaders.Add("Accept", "application/json");
+        //    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
 
-            try
-            {
-                HttpResponseMessage response = await client.GetAsync($"{_configuration["GetMainMenuNavigationIconsUri"]}");
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
-                responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
-                var res = JsonConvert.DeserializeObject<MainMenuNavigationSerializer>(responseBody);
-                return res;
-            }
-            catch (HttpRequestException e)
-            {
-                Console.WriteLine("\nException Caught!");
-                Console.WriteLine("Message :{0} ", e.Message);
-                return null;
-            }
-        }
+        //    try
+        //    {
+        //        HttpResponseMessage response = await client.GetAsync($"{_configuration["GetMainMenuNavigationIconsUri"]}");
+        //        response.EnsureSuccessStatusCode();
+        //        string responseBody = await response.Content.ReadAsStringAsync();
+        //        responseBody = responseBody.ToString().Replace("}}", "}").Replace("{{", "{");
+        //        var res = JsonConvert.DeserializeObject<MainMenuNavigationSerializer>(responseBody);
+        //        return res;
+        //    }
+        //    catch (HttpRequestException e)
+        //    {
+        //        Console.WriteLine("\nException Caught!");
+        //        Console.WriteLine("Message :{0} ", e.Message);
+        //        return null;
+        //    }
+        //}
     }
 }

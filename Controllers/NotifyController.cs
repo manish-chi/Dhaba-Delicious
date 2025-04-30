@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Utilities;
 using Daba_Delicious.Models;
+using Microsoft.Bot.Builder.Dialogs.Memory.Scopes;
 
 namespace Dhaba_Delicious.Controllers
 {
@@ -20,6 +21,7 @@ namespace Dhaba_Delicious.Controllers
         private readonly IBotFrameworkHttpAdapter _adapter;
         private readonly string _appId;
         private readonly OrderManager _orderManager;
+        private readonly IConfiguration _configuration;
         private readonly ConcurrentDictionary<string, ConversationReference> _conversationReferences;
         private IStatePropertyAccessor<Order> _orderAccessor;
         private readonly IStatePropertyAccessor<User> _userAccessor;
@@ -29,6 +31,7 @@ namespace Dhaba_Delicious.Controllers
             this._orderAccessor = userState.CreateProperty<Order>("Order");
             this._userAccessor = userState.CreateProperty<User>("User");
             this._adapter = adapter;
+            this._configuration = configuration;
             this._conversationReferences = conversationReferences;
             this._appId = configuration["MicrosoftAppId"] ?? string.Empty;
             this._orderManager = new OrderManager(new OrderService(configuration),configuration,_orderAccessor,_userAccessor);
@@ -52,11 +55,14 @@ namespace Dhaba_Delicious.Controllers
 
         private async Task BotCallback(ITurnContext turnContext, CancellationToken cancellationToken)
         {
-            var order = await _orderAccessor.GetAsync(turnContext, () => new Order(), cancellationToken);
+            var user = await _userAccessor.GetAsync(turnContext, () => new User(), cancellationToken);
+            // await dc.BeginDialogAsync(nameof(DDLuisDialog), cancellationToken);
 
-            var reply = await _orderManager.CreateOrderAsync(turnContext,cancellationToken,order);
-            
-            await turnContext.SendActivityAsync(reply);
+            var _responseManager = new ResponseManager(_configuration, new Daba_Delicious.Cards.CardManager(), new ResponseFromLLMService(_configuration));
+
+            var reply = await _responseManager.GetDefaultResponseAsync(turnContext,"paymentsuccessfrombot", user.Token);
+
+            await turnContext.SendActivitiesAsync(reply.ToArray(), cancellationToken);
         }
     }
 }

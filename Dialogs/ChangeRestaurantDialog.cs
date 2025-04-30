@@ -24,7 +24,7 @@ namespace Dhaba_Delicious.Dialogs
 
             await _orderAccessor.SetAsync(outerDc.Context, order, cancellationToken);
 
-            await outerDc.BeginDialogAsync(nameof(MenuDialog), null, cancellationToken);
+            await outerDc.BeginDialogAsync(nameof(AddItemsDialog), null, cancellationToken);
 
             return EndOfTurn;
         }

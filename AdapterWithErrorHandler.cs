@@ -22,7 +22,7 @@ namespace Daba_Delicious
             _appSettings = appSettings.Value;
 
 
-            Use(spellCheckMiddleWare);
+            //Use(spellCheckMiddleWare);
 
 
             OnTurnError = async (turnContext, exception) =>

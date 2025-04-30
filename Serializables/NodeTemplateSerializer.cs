@@ -2,9 +2,10 @@
 
 namespace Dhaba_Delicious.Serializables
 {
-    public class NodeTemplateSeralizer
+    public class NodeTemplateSerializer
     {
         public string status { get; set; }
-        public object data { get; set; }
+        public string data { get; set; }
     }
+
 }

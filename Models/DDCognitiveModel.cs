@@ -24,7 +24,7 @@ namespace Daba_Delicious.Models
             reservation,
             contact,
             offers,
-            dishes,
+            orderFood,
             None,
             change
         }

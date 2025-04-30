@@ -30,277 +30,34 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Dhaba_Delicious.Dialogs
 {
-    public class DishesDialog : CancelAndHelpDialog
+    public class OrderFoodDialog : CancelAndHelpDialog
     {
         private IStatePropertyAccessor<User> _userAccessor;
-        private IStatePropertyAccessor<Order> _orderAccessor;
-        private IStatePropertyAccessor<List<RestaurantData>> _restaurantDataAccessor;
-        private IStatePropertyAccessor<Cart> _cartAccessor;
-        private IStatePropertyAccessor<DDCognitiveModel> _recognizerAccessor;
+        private ResponseManager _responseManager;
 
-
-        private DDRecognizer _dDRecognizer;
-        private CardManager _cardManager;
-        private NearestRestaurantProvider _nearestRestaurantProvider;
-        private OrderManager _orderManager;
-        private RestaurantManager _restaurantManager;
-        private UserState _userState;
-
-        public DishesDialog(IConfiguration configuration,IStatePropertyAccessor<Order> orderAccessor,IStatePropertyAccessor<Cart> cartAccessor,IStatePropertyAccessor<List<RestaurantData>> restaurantDataAccessor,IStatePropertyAccessor<User> userAccessor,UserState userstate,DDRecognizer dDRecognizer) : base(nameof(DishesDialog))
+        public OrderFoodDialog(ResponseManager responseManager,IStatePropertyAccessor<User> userAccessor):base(nameof(OrderFoodDialog))
         {
             _userAccessor = userAccessor;
-            _orderAccessor = orderAccessor;
-            _dDRecognizer = dDRecognizer;
-            _cartAccessor = cartAccessor;
-            _recognizerAccessor = userstate.CreateProperty<DDCognitiveModel>(nameof(DDCognitiveModel));
-            _restaurantDataAccessor  = restaurantDataAccessor; 
-            _userState = userstate;
-            _cardManager = new CardManager(new ChatBotManager(new ChatBotNavigationService(configuration)));
-            _orderManager = new OrderManager(new OrderService(configuration), configuration, _orderAccessor,_userAccessor);
-            _restaurantManager = new RestaurantManager(configuration, new RestaurantService(configuration),_userAccessor, _restaurantDataAccessor,_recognizerAccessor, _orderAccessor, new CardManager());
-            _nearestRestaurantProvider = new NearestRestaurantProvider(_userAccessor, _orderAccessor, _restaurantDataAccessor, _restaurantManager);
-            var steps = new WaterfallStep[]
-            {
-                CheckIfSelectedRestaurantsAsync,
-                SetRestaurantAsync,
-                ShowRequestedDishesAsync,
-                AskQuntatiesAsync,
-                ReConfirmIfUserNeedsToAddMoreAsync,
-                CheckIfCheckOutOrMoreItemsAsync,
-                CheckOutAsync
-            };
-
-            Dialogs.Add(new WaterfallDialog("DishesWaterFallSteps", steps));
-
-            Dialogs.Add(new ConfirmPrompt("AskingAgainForMenuDialog"));
+            _responseManager = responseManager;
         }
 
-        
-
-        private async Task<DialogTurnResult> CheckOutAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        public override async Task<DialogTurnResult> BeginDialogAsync(DialogContext outerDc, object options = null, CancellationToken cancellationToken = default)
         {
-            var reply = stepContext.Context.Activity.Text;
+            var preOrderOptions = (PreOrderSerializer) options;
 
-            var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(), cancellationToken);
-
-            //cancellation of order...
-            if (!reply.Contains("pay"))
+            if (preOrderOptions.items == null)
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("I suggest trying these options..."), cancellationToken);
+                var user = await _userAccessor.GetAsync(outerDc.Context, () => new User(), cancellationToken);
 
-                var menuReply = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity.CreateReply(),user.Token) as Activity;
+                var preOrderReply = "";
 
-                await stepContext.Context.SendActivityAsync(menuReply, cancellationToken);
+                await outerDc.Context.SendActivityAsync(preOrderReply,null,null, cancellationToken);
 
-                return await stepContext.EndDialogAsync(null, cancellationToken);
-
-            }
-            else {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Your order has been placed!"), cancellationToken);
-
-                return EndOfTurn;
-            }
-        }
-
-        private async Task<DialogTurnResult> CheckIfCheckOutOrMoreItemsAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var reply = stepContext.Context.Activity.Text;
-
-            if(reply.Equals("no",StringComparison.InvariantCultureIgnoreCase))
-            {
-                var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
-
-                var receiptCard = await _restaurantManager.GetReceiptCardAsync(stepContext.Context,cancellationToken,order);
-
-                await stepContext.Context.SendActivityAsync(receiptCard, cancellationToken);
-
-                return EndOfTurn;
+                return await outerDc.EndDialogAsync(null, cancellationToken);
             }
             else
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("What would you like to order from our restaurant today?"), cancellationToken);
-
-                return await stepContext.EndDialogAsync(null, cancellationToken);
-            }
-        }
-
-        private async Task<DialogTurnResult> ReConfirmIfUserNeedsToAddMoreAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var choices = new List<Choice>();
-
-            choices.Add(new Choice()
-            {
-                Value = "checkout",
-                Synonyms = new List<string>() { "checkout" },
-            });
-
-            return await stepContext.PromptAsync("AskingAgainForMenuDialog", new PromptOptions()
-            {
-                Prompt = MessageFactory.Text($"Would you like to explore more order items❓"),
-                Choices = choices
-            }, cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> AskQuntatiesAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-
-            if(stepContext.Context.Activity.Value == null)
-            {
-                return await stepContext.BeginDialogAsync("DishesWaterFallSteps",null, cancellationToken);
-            }
-
-
-            dynamic submitData = stepContext.Context.Activity.Value;
-
-            var menuItemId = submitData.action;
-
-            var quantity = Convert.ToString(submitData.quantity);
-
-            var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
-
-            var selectedMenuItem = order.retrivedItemsPerRequest.First(x => x._id == menuItemId.ToString());
-
-            order.cart.AddToCart(selectedMenuItem._id, quantity);
-
-            order.CreateFinalizedMenuItems(); //add selected items to finialized list.
-
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text($"{quantity} - {selectedMenuItem.name} added to cart!🛒"), cancellationToken);
-
-            return await stepContext.NextAsync(null, cancellationToken);
-        }
-
-        private async Task<DialogTurnResult> ShowRequestedDishesAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-                var recognizer = await _recognizerAccessor.GetAsync(stepContext.Context, () => new DDCognitiveModel(), cancellationToken);
-               
-                var reply = await _restaurantManager.GetMenuItemsCardAsync(stepContext.Context, cancellationToken,recognizer.FoodItemNames);
-
-                if(reply.Attachments.Count == 0) //that means restaurant doesn't serve the item
-                {
-                    return await this.ShowTop3MostPopularItemsAsync(stepContext, cancellationToken);
-                }
-
-                await stepContext.Context.SendActivityAsync(reply, cancellationToken);
-
-                return EndOfTurn;
-        }
-
-        private async Task<DialogTurnResult> ShowTop3MostPopularItemsAsync(WaterfallStepContext stepContext,CancellationToken cancellationToken)
-        {
-            var recognizer = await _recognizerAccessor.GetAsync(stepContext.Context, () => new DDCognitiveModel(), cancellationToken);
-
-            var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
-
-            var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(), cancellationToken);
-
-            string notAvailableFoodItemString = string.Empty;
-
-            foreach (var item in order.NotAvailableItems)
-            {
-                notAvailableFoodItemString += item + ",";
-            }
-
-            //show top 3 orders
-            var top3Orders = await _orderManager.Top3OrdersAsync(stepContext.Context, cancellationToken, order);
-
-            if (top3Orders.Attachments.Count > 0)
-            {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant.*Here are our popular dishes*"), cancellationToken);
-
-                await stepContext.Context.SendActivityAsync(top3Orders, cancellationToken);
-
-                return EndOfTurn;
-            }
-            else
-            {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Sorry, we don't serve {notAvailableFoodItemString} at our restaurant 😔."), cancellationToken);
-
-                //show menu..
-                var reply = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity,user.Token);
-
-                await stepContext.Context.SendActivityAsync(reply, cancellationToken);
-
-                return await stepContext.EndDialogAsync(null, cancellationToken);
-            }
-        }
-
-        private async Task<DialogTurnResult> SetRestaurantAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            //if restaurant is already selected using menu dialog
-            if (stepContext.Result != null)
-            {
-                return await stepContext.NextAsync(null,cancellationToken);
-            }
-            //selected restaurant is saved into order accessor here.
-            await _nearestRestaurantProvider.SetOrderForRestaurantAsync(stepContext.Context, cancellationToken);
-
-            return await stepContext.NextAsync(null,cancellationToken);
-
-        }
-
-
-        private async Task<DialogTurnResult> CheckIfSelectedRestaurantsAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var result = await _dDRecognizer.RecognizeAsync<DDCognitiveModel>(stepContext.Context, cancellationToken);
-
-            if (result.Entities.Entities.Length == 0)
-            {
-                return await this.NoMenuItemsFoundAsync(stepContext, cancellationToken);
-            }
-
-            this.IfMenuItemsFound(result);
-
-            await _recognizerAccessor.SetAsync(stepContext.Context, result, cancellationToken);
-
-            //1. recognize the entitites.
-            //2. If the entities aren't getting recongnized then then display the user that you don't serve this item
-            //3. If the entitites are recognized then go ahead and do something about it.
-
-            var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
-
-            if (order.RestaurantData == null)
-            {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text("I'd be happy to assist! 👍 Pick a restaurant from the selection below."), cancellationToken);
-
-                var reply = await _restaurantManager.GetNearestRestoByMenuNames(stepContext.Context, cancellationToken, result.FoodItemNames);
-
-                await stepContext.Context.SendActivityAsync(reply, cancellationToken);
-
-                return EndOfTurn;
-            }
-            else
-            {
-                return await stepContext.NextAsync(true, cancellationToken);
-            }
-        }
-
-        private void IfMenuItemsFound(DDCognitiveModel result)
-        {
-            var drinkEntity = result.Entities.GetDrink();
-
-            var foodEntity = result.Entities.GetFood();
-
-            result.AddFoodItems(result);
-        }
-
-        private async Task<DialogTurnResult> NoMenuItemsFoundAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            var order = await _orderAccessor.GetAsync(stepContext.Context, () => new Order(), cancellationToken);
-            var user = await _userAccessor.GetAsync(stepContext.Context, () => new User(), cancellationToken);
-
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text("Sorry, we don't provide this item at the moment."), cancellationToken);
-
-            if (order.cart.Items.Count > 0)
-            {
-                return await this.CheckIfCheckOutOrMoreItemsAsync(stepContext, cancellationToken);
-            }
-            else
-            {
-                var menuSuggestion = await this._cardManager.GetMenuSuggestionReplyAsync(stepContext.Context.Activity, user.Token);
-
-                await stepContext.Context.SendActivityAsync(menuSuggestion, cancellationToken);
-
-                return await stepContext.EndDialogAsync(null, cancellationToken);
+                return await outerDc.EndDialogAsync(null, cancellationToken);
             }
         }
     }

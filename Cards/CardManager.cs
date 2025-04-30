@@ -5,6 +5,7 @@ using Daba_Delicious.Models;
 using Dhaba_Delicious.Models;
 using Dhaba_Delicious.Serializables;
 using Dhaba_Delicious.Serializables.Menu;
+using Dhaba_Delicious.Serializables.Order;
 using Dhaba_Delicious.Utilities;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Bot.Builder;
@@ -27,32 +28,32 @@ namespace Daba_Delicious.Cards
             
         }
 
-        private ChatBotManager _botManager;
-        public CardManager(ChatBotManager botManager)
-        {
-            this._botManager = botManager;
-        }
+        //private ChatBotManager _botManager;
+        //public CardManager(ChatBotManager botManager)
+        //{
+        //    this._botManager = botManager;
+        //}
 
         public async Task<IMessageActivity> GetMenuSuggestionReplyAsync(Activity reply,string token)
         {
-            var mainNavigationOptions = await _botManager.getMainNavigationOptions(token);
+            //var mainNavigationOptions = await _botManager.getMainNavigationOptions(token);
 
-            var actions = new List<CardAction>();
+            //var actions = new List<CardAction>();
 
-            foreach(var option in mainNavigationOptions.data){
-                actions.Add(new CardAction()
-                {
-                    Title = option.name,
-                    Image =option.image,
-                    Type = ActionTypes.ImBack,
-                    Value = option.value
-                });
-            }
+            //foreach(var option in mainNavigationOptions.data){
+            //    actions.Add(new CardAction()
+            //    {
+            //        Title = option.name,
+            //        Image =option.image,
+            //        Type = ActionTypes.ImBack,
+            //        Value = option.value
+            //    });
+            //}
 
-            reply.SuggestedActions = new SuggestedActions()
-            {
-                Actions = actions,
-            };
+            //reply.SuggestedActions = new SuggestedActions()
+            //{
+            //    Actions = actions,
+            //};
 
             return reply;
 
@@ -200,23 +201,25 @@ namespace Daba_Delicious.Cards
             return card.ToAttachment();
         }
 
-        internal Attachment GetMenuCard(MenuItem item,MenuCardSerializer menuCardSkeleton)
+        internal List<Attachment> GetMenuCard(dynamic items)
         {
+            var attachments = new List<Attachment>();
 
-            var foodCategoryUrl = item.type == "veg" ? "https://dhabadeliciousstorage.blob.core.windows.net/icons/icons8-veg-48.png" : "https://dhabadeliciousstorage.blob.core.windows.net/icons/icons8-non-veg-48.png";
-
-            menuCardSkeleton.schema = "http://adaptivecards.io/schemas/adaptive-card.json";
-            menuCardSkeleton.body[0].url = item.image; //menu item url,
-            menuCardSkeleton.body[1].columns[0].items[0].text = item.name;
-            menuCardSkeleton.body[1].columns[1].items[0].url = foodCategoryUrl; //veg/nonveg icon.
-            menuCardSkeleton.body[3].items[0].text = item.description;
-            menuCardSkeleton.body[2].columns[1].items[0].text = $"{item.price_in_INR}/-";
-            menuCardSkeleton.body[4].columns[0].items[0].selectAction.data = new { action = item._id };
-            return new Attachment()
+            foreach(var item in items)
             {
-                Content = menuCardSkeleton,
-                ContentType = "application/vnd.microsoft.card.adaptive",
-            };
+                attachments.Add(new HeroCard()
+                {
+                    Title = item.name,
+                    Images = new List<CardImage>() {new CardImage()
+                    {
+                        Url = item.image,
+                        Alt  = item.name,
+                    }
+                   }
+                }.ToAttachment());
+            }
+
+            return attachments;
         }
     }
 }
