@@ -195,6 +195,8 @@ namespace Daba_Delicious.Bots
         {
             var reply = await this._responseManager.GetWelcomeReponseAsync(user.Token,context);
 
+            await context.SendActivityAsync(context.Activity.Conversation.Id, null, null, cancellationToken);
+
             await context.SendActivityAsync(reply, cancellationToken);
         }
     }
