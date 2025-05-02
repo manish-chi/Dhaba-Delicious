@@ -178,6 +178,8 @@ namespace Daba_Delicious.Bots
 
                 var token = await _authenticationManager.AuthenticateAdmin();
 
+                //adding this line..
+
                 var user = new User()
                 {
                     Token = token
